@@ -418,7 +418,6 @@
       { name: "Mixed Ice Cream", category: "Ice Cream", price: "IQD 5,500", description: "Three scoops of our favorite flavors in one bowl.", image: "https://images.unsplash.com/photo-1551024601-bec78aea704b?auto=format&fit=crop&w=900&q=80", badge: "Best of both" }
     ];
 
-    const builtInMenuCatalog = menuItems.map(item => ({ ...item }));
     menuItems.splice(0, menuItems.length);
 
     const builtInArabicItems = {
@@ -483,7 +482,6 @@
         if (!item.descriptionKu) item.descriptionKu = badini[1];
       }
     });
-    const builtInHotCoffeeCatalog = builtInMenuCatalog.filter(item => item.category === "Hot Coffee").map(item => ({ ...item }));
     const savedCategories = localStorage.getItem("shorash-menu-categories");
     if (savedCategories) {
       try { Object.assign(categoryDetails, JSON.parse(savedCategories)); } catch (error) { localStorage.removeItem("shorash-menu-categories"); }
@@ -515,7 +513,6 @@
     menuItems.forEach(item => { if (!categoryDetails[item.category]) categoryDetails[item.category] = ["fa-tag", "Fresh from the cafe."]; });
     categories = [...new Set([...Object.keys(categoryDetails), ...menuItems.map(item => item.category)])];
     allCategories = ["All", ...categories];
-    const requestedHotCoffeeNames = new Set(["Spanish Latte", "Hot Americano", "Espresso", "Double Espresso", "Hot Latte", "Hot Caramel", "Hot Lotus", "Hot Milk", "Hot Chocolate", "Hot Vanilla", "Hot Coconut", "Hot Hazelnut", "Hot Mocha", "Hot White Mocha"]);
     const menuContent = document.getElementById("menuContent");
     const categoryNav = document.getElementById("categoryNav");
     const mobileMenuLinks = document.getElementById("mobileMenuLinks");
@@ -814,38 +811,6 @@
       }
       const listPanel = adminList.closest(".admin-panel");
       const logoutButton = document.getElementById("adminLogout");
-      if (listPanel && !document.getElementById("addHotCoffeeMenu")) {
-        const addHotCoffeeButton = document.createElement("button");
-        addHotCoffeeButton.className = "admin-secondary mb-3";
-        addHotCoffeeButton.id = "addHotCoffeeMenu";
-        addHotCoffeeButton.type = "button";
-        addHotCoffeeButton.innerHTML = '<i class="fa-solid fa-mug-hot" aria-hidden="true"></i> Add Hot Coffee menu';
-        listPanel.insertBefore(addHotCoffeeButton, listPanel.querySelector(".admin-list-toolbar") || adminList);
-        addHotCoffeeButton.addEventListener("click", async () => {
-          const existingNames = new Set(menuItems.map(item => item.name));
-          const missingItems = builtInHotCoffeeCatalog.filter(item => requestedHotCoffeeNames.has(item.name) && !existingNames.has(item.name)).map(item => ({ ...item }));
-          if (!missingItems.length) {
-            adminCategoryError.textContent = "All Hot Coffee items are already in the menu.";
-            return;
-          }
-          missingItems.forEach(item => {
-            const arabic = builtInArabicHotCoffeeItems[item.name];
-            const badini = builtInBadiniItems[item.name];
-            if (arabic) { item.nameAr = item.nameAr || arabic[0]; item.descriptionAr = item.descriptionAr || arabic[1]; }
-            if (badini) { item.nameKu = item.nameKu || badini[0]; item.descriptionKu = item.descriptionKu || badini[1]; }
-          });
-          menuItems.push(...missingItems);
-          syncCategories();
-          renderMenu(searchInput.value);
-          refreshAdminList();
-          try {
-            await persistMenu();
-            adminCategoryError.textContent = `${missingItems.length} Hot Coffee items added and synced online.`;
-          } catch (error) {
-            adminCategoryError.textContent = error.message;
-          }
-        });
-      }
       if (logoutButton && !document.getElementById("clearAllItems")) {
         const clearButton = document.createElement("button");
         clearButton.className = "admin-secondary admin-danger";
