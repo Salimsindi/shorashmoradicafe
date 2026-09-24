@@ -34,9 +34,9 @@
     html::-webkit-scrollbar { display: none; width: 0; height: 0; }
     body { scrollbar-width: none; }
     body::-webkit-scrollbar { display: none; width: 0; height: 0; }
-    body { position: relative; isolation: isolate; margin: 0; color: var(--ink); background-color: var(--paper); background-image: linear-gradient(118deg, transparent 8%, rgba(74, 141, 255, .2) 25%, transparent 39%, rgba(74, 141, 255, .1) 58%, transparent 73%), linear-gradient(26deg, rgba(8, 39, 72, .42), transparent 30%, rgba(36, 89, 145, .2) 68%, transparent), linear-gradient(160deg, transparent 20%, rgba(15, 61, 105, .2) 48%, transparent 62%); background-size: 220% 220%, 180% 180%, 240% 240%; background-attachment: fixed; font-family: "DM Sans", sans-serif; animation: bodyGlow 24s ease-in-out infinite alternate; transition: background-color .35s ease, color .35s ease; }
-    body::before { content: ""; position: fixed; inset: 0; z-index: -2; pointer-events: none; opacity: .34; background-image: radial-gradient(rgba(74, 141, 255, .13) 1px, transparent 1px), linear-gradient(90deg, transparent 49.8%, rgba(74, 141, 255, .035) 50%, transparent 50.2%); background-size: 24px 24px, 120px 120px; animation: textureDrift 22s linear infinite; }
-    body::after { content: ""; position: fixed; inset: -35%; z-index: -1; pointer-events: none; opacity: .34; mix-blend-mode: screen; background: linear-gradient(112deg, transparent 0 28%, rgba(74, 141, 255, .16) 38%, rgba(74, 141, 255, .03) 45%, transparent 53% 68%, rgba(74, 141, 255, .08) 77%, transparent 84%); background-size: 180% 180%; animation: ambientFlow 18s ease-in-out infinite alternate, goldSweep 14s ease-in-out infinite; }
+    body { position: relative; isolation: isolate; margin: 0; color: var(--ink); background-color: var(--paper); background-image: linear-gradient(118deg, transparent 8%, rgba(74, 141, 255, .2) 25%, transparent 39%, rgba(74, 141, 255, .1) 58%, transparent 73%), linear-gradient(26deg, rgba(8, 39, 72, .42), transparent 30%, rgba(36, 89, 145, .2) 68%, transparent), linear-gradient(160deg, transparent 20%, rgba(15, 61, 105, .2) 48%, transparent 62%); background-size: 220% 220%, 180% 180%, 240% 240%; background-attachment: fixed; font-family: "DM Sans", sans-serif; transition: background-color .35s ease, color .35s ease; }
+    body::before { content: ""; position: fixed; inset: 0; z-index: -2; pointer-events: none; opacity: .34; background-image: radial-gradient(rgba(74, 141, 255, .13) 1px, transparent 1px), linear-gradient(90deg, transparent 49.8%, rgba(74, 141, 255, .035) 50%, transparent 50.2%); background-size: 24px 24px, 120px 120px; }
+    body::after { content: ""; position: fixed; inset: -35%; z-index: -1; pointer-events: none; opacity: .34; mix-blend-mode: screen; background: linear-gradient(112deg, transparent 0 28%, rgba(74, 141, 255, .16) 38%, rgba(74, 141, 255, .03) 45%, transparent 53% 68%, rgba(74, 141, 255, .08) 77%, transparent 84%); background-size: 180% 180%; }
     h1, h2, h3, h4, .serif { font-family: "Playfair Display", serif; }
     html[lang="ar"] body { font-family: "Cairo", sans-serif; font-weight: 700; line-height: 1.8; }
     html[lang="ku"] body { font-family: "Noto Kufi Arabic", sans-serif; font-weight: 600; line-height: 2; }
@@ -418,6 +418,9 @@
       { name: "Mixed Ice Cream", category: "Ice Cream", price: "IQD 5,500", description: "Three scoops of our favorite flavors in one bowl.", image: "https://images.unsplash.com/photo-1551024601-bec78aea704b?auto=format&fit=crop&w=900&q=80", badge: "Best of both" }
     ];
 
+    const builtInMenuCatalog = menuItems.map(item => ({ ...item }));
+    menuItems.splice(0, menuItems.length);
+
     const builtInArabicItems = {
       Espresso: ["إسبريسو", "قهوة مركزة وغنية بطبقة كريمية ناعمة."], Americano: ["أمريكانو", "إسبريسو ممزوج بالماء الساخن لمذاق نقي."], Cappuccino: ["كابتشينو", "إسبريسو مع حليب مبخر ورغوة كريمية."], Latte: ["لاتيه", "إسبريسو ناعم مع حليب مبخر silky ومتوازن."], Mocha: ["موكا", "إسبريسو وشوكولاتة داكنة وحليب مبخر مع رغوة."], Macchiato: ["ماكياتو", "إسبريسو مع لمسة من رغوة الحليب الناعمة."], "Turkish Coffee": ["قهوة تركية", "قهوة محضرة بالطريقة التقليدية، عطرية ومركزة."], "Iced Coffee": ["قهوة مثلجة", "قهوة باردة فوق الثلج بمذاق منعش."], "Iced Latte": ["لاتيه مثلج", "حليب بارد وإسبريسو فوق الثلج."], "Iced Mocha": ["موكا مثلجة", "شوكولاتة وإسبريسو وحليب بارد فوق الثلج."], "Fresh Orange Juice": ["عصير برتقال طازج", "برتقال معصور طازجاً، مشرق وحلو طبيعياً."], Lemonade: ["ليمونادة", "ليمونادة منزلية بنكهة حمضية منعشة."], Mojito: ["موهيتو", "نعناع طازج ولايم وصودا بنهاية باردة ومنعشة."], "Blue Lagoon": ["بلو لاغون", "كوكتيل حمضي ملون بنكهة استوائية مشرقة."], "Strawberry Cocktail": ["كوكتيل فراولة", "فراولة ناضجة وحمضيات ولمسة فوارة لطيفة."], "Fruit Cocktail": ["كوكتيل فواكه", "نكهات فواكه موسمية ممزوجة بطريقة ملونة."], Cheesecake: ["تشيزكيك", "تشيزكيك كريمي مخبوز مع قاعدة بسكويت بالزبدة."], "Chocolate Cake": ["كيكة شوكولاتة", "كيكة شوكولاتة طرية مع تغطية غاناش لامعة."], Tiramisu: ["تيراميسو", "طبقات مغمسة بالقهوة مع كريمة ماسكاربوني وكاكاو."], Brownie: ["براوني", "براوني شوكولاتة داكنة بقلب طري وغني."], "Ice Cream": ["آيس كريم", "كرَتان من اختيارك تقدمان باردتين وببساطة."], Pizza: ["بيتزا", "عجينة رقيقة ومقرمشة مع طماطم وموزاريلا وريحان."], Burger: ["برغر", "قطعة لحم مشوية مع صلصة خاصة وخضار طازجة."], Sandwich: ["ساندويتش", "خبز محمص مع حشوات طازجة وخضار."], "French Fries": ["بطاطا مقلية", "بطاطا ذهبية ومقرمشة مع ملح البحر."], "Chicken Sandwich": ["ساندويتش دجاج", "دجاج مشوي وأعشاب وخس مقرمش في خبز محمص."], "Black Tea": ["شاي أسود", "شاي كلاسيكي غني يقدم ساخناً وعطراً."], "Green Tea": ["شاي أخضر", "شاي أخضر خفيف بنهاية نظيفة ومنعشة."], "Lemon Tea": ["شاي بالليمون", "حمضيات مشرقة مع شاي دافئ ومنعش."], "Mint Tea": ["شاي بالنعناع", "شاي مهدئ مع أوراق نعناع طازجة وعطرة."], Croissant: ["كرواسون", "طبقات زبدية هشة مخبوزة طازجة للصباح."], "Egg Breakfast": ["فطور بالبيض", "بيض وخبز وجوانب موسمية لبداية يوم سهلة."], "Cheese Sandwich": ["ساندويتش جبن", "جبن مذاب وخبز محمص بقشرة ذهبية."], Pancakes: ["بان كيك", "طبقات هشة مع شراب القيقب وفواكه موسمية."], "Vanilla Ice Cream": ["آيس كريم فانيلا", "آيس كريم ناعم بنكهة الفانيلا الطبيعية."], "Chocolate Ice Cream": ["آيس كريم شوكولاتة", "آيس كريم كاكاو غني وناعم."], "Strawberry Ice Cream": ["آيس كريم فراولة", "آيس كريم كريمي بنكهة الفراولة الحقيقية."], "Mixed Ice Cream": ["آيس كريم مشكل", "ثلاث كرات من نكهاتنا المفضلة في طبق واحد."]
     };
@@ -439,7 +442,7 @@
       Crepe: ["fa-cookie-bite", "Delicate café treats made to order."],
       "Mini Pancake": ["fa-circle-dot", "Small, fluffy bites with big flavor."],
       Waffle: ["fa-border-all", "Golden, crisp and made for sharing."],
-      Kunafa: ["fa-cake-candles", "A sweet ending with a local touch."],
+      Kunafa: ["fa-circle-dot", "A sweet ending with a local touch."],
       "Thai Doodorma": ["fa-utensils", "Savory comfort for the café table."]
     };
     const categoryArabicNames = {
@@ -480,7 +483,7 @@
         if (!item.descriptionKu) item.descriptionKu = badini[1];
       }
     });
-    const builtInHotCoffeeCatalog = menuItems.filter(item => item.category === "Hot Coffee").map(item => ({ ...item }));
+    const builtInHotCoffeeCatalog = builtInMenuCatalog.filter(item => item.category === "Hot Coffee").map(item => ({ ...item }));
     const savedCategories = localStorage.getItem("shorash-menu-categories");
     if (savedCategories) {
       try { Object.assign(categoryDetails, JSON.parse(savedCategories)); } catch (error) { localStorage.removeItem("shorash-menu-categories"); }
