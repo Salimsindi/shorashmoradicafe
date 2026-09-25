@@ -1,0 +1,12 @@
+/*
+  Security headers for the static Netlify site.
+*/
+/*
+  X-Frame-Options is intentionally omitted because Firebase/Google sign-in
+  may be embedded by browser authentication flows.
+*/
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=()
+  Cross-Origin-Opener-Policy: same-origin-allow-popups
+  Strict-Transport-Security: max-age=31536000; includeSubDomains
