@@ -106,14 +106,15 @@
     .section-heading p { margin: 0 0 .25rem; color: var(--muted); font-size: .75rem; letter-spacing: .12em; text-transform: uppercase; }
     .menu-card { height: 100%; overflow: hidden; border: 1px solid var(--line); border-radius: var(--radius); background: var(--card); box-shadow: 0 8px 25px rgba(0, 0, 0, .12); cursor: pointer; transition: transform .35s cubic-bezier(.2,.8,.2,1), box-shadow .35s ease, border-color .35s ease; }
     .menu-card:hover, .menu-card:focus-visible { transform: translateY(-9px) rotate(-.4deg); border-color: var(--gold); box-shadow: 0 25px 55px rgba(0, 0, 0, .3); outline: none; }
-    .card-image { aspect-ratio: 1.5 / 1; overflow: hidden; background: var(--paper-deep); }
+    .card-image { aspect-ratio: 1.8 / 1; overflow: hidden; background: var(--paper-deep); }
     .card-image img { width: 100%; height: 100%; display: block; object-fit: cover; filter: saturate(.82); transition: transform .7s cubic-bezier(.2,.8,.2,1), filter .5s ease; }
     .menu-card:hover .card-image img { transform: scale(1.1); filter: saturate(1.12); }
-    .card-body { display: flex; flex-direction: column; padding: 1.15rem; min-height: 154px; }
+    .card-body { display: flex; flex-direction: column; padding: .8rem; min-height: 118px; }
+    .card-body.no-description { min-height: 0; }
     .card-meta { display: flex; align-items: start; justify-content: space-between; gap: .65rem; }
-    .card-body h3 { font-size: 1.25rem; margin: 0; }
+    .card-body h3 { font-size: 1.05rem; margin: 0; }
     .price { color: var(--coffee); font-weight: 700; white-space: nowrap; }
-    .card-body p { margin: .7rem 0 0; color: var(--muted); font-size: .86rem; line-height: 1.55; }
+    .card-body p { margin: .45rem 0 0; color: var(--muted); font-size: .78rem; line-height: 1.4; }
     .badge-soft { display: inline-block; align-self: flex-start; margin-top: auto; padding: .28rem .55rem; border-radius: 999px; color: var(--coffee); background: color-mix(in srgb, var(--gold) 16%, transparent); font-size: .65rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
     .reveal { opacity: 0; transform: translateY(28px) scale(.965); transition: opacity .75s cubic-bezier(.2,.8,.2,1), transform .75s cubic-bezier(.2,.8,.2,1); }
     .reveal.show { opacity: 1; transform: none; }
@@ -286,7 +287,7 @@
     @keyframes heroSheen { from { background-position: 0% 50%; opacity: .35; } to { background-position: 100% 50%; opacity: .85; } }
     @keyframes bodyGlow { from { background-position: 0% 0%, 100% 0%; } to { background-position: 100% 100%, 0% 100%; } }
     @keyframes goldSweep { 0%, 100% { opacity: .22; transform: translateX(-3%) skewX(-3deg); } 50% { opacity: .42; transform: translateX(3%) skewX(3deg); } }
-    @media (max-width: 767px) { .category-bar { display: none; } .nav-wrap { min-height: 82px; } .brand { gap: .45rem; } .brand-mark { width: 52px; height: 64px; padding: 1px; border-radius: 9px; } .brand-arabic { font-size: 1.08rem; } .brand-latin { font-size: .56rem; letter-spacing: .08em; } .coffee-spark { font-size: .76rem; } .hero { min-height: 485px; } .hero-content { padding: 6rem 0 5rem; } .search-panel { margin-top: 1rem; padding: .65rem .75rem; } .menu-section { padding-top: 3.3rem; } .section-heading { align-items: start; flex-direction: column; gap: .25rem; } .card-image { aspect-ratio: 1 / 1; } .card-body { min-height: 148px; padding: .8rem; } .card-body h3 { font-size: 1rem; line-height: 1.1; } .price { font-size: .78rem; } .card-body p { margin-top: .5rem; font-size: .73rem; line-height: 1.4; } .badge-soft { font-size: .56rem; padding: .22rem .4rem; } .footer-brand { font-size: .85rem; letter-spacing: .1em; } .footer-logo { width: 150px; height: 66px; } .footer-cowboy-logo { width: 68px; height: 68px; } .footer-arabic { font-size: 1rem; } .footer-bottom { flex-direction: column; } }
+    @media (max-width: 767px) { .category-bar { display: none; } .nav-wrap { min-height: 82px; } .brand { gap: .45rem; } .brand-mark { width: 52px; height: 64px; padding: 1px; border-radius: 9px; } .brand-arabic { font-size: 1.08rem; } .brand-latin { font-size: .56rem; letter-spacing: .08em; } .coffee-spark { font-size: .76rem; } .hero { min-height: 485px; } .hero-content { padding: 6rem 0 5rem; } .search-panel { margin-top: 1rem; padding: .65rem .75rem; } .menu-section { padding-top: 3.3rem; } .section-heading { align-items: start; flex-direction: column; gap: .25rem; } .card-image { aspect-ratio: 1.65 / 1; } .card-body { min-height: 96px; padding: .65rem; } .card-body h3 { font-size: .9rem; line-height: 1.1; } .price { font-size: .72rem; } .card-body p { margin-top: .35rem; font-size: .68rem; line-height: 1.3; } .badge-soft { font-size: .52rem; padding: .2rem .35rem; } .footer-brand { font-size: .85rem; letter-spacing: .1em; } .footer-logo { width: 150px; height: 66px; } .footer-cowboy-logo { width: 68px; height: 68px; } .footer-arabic { font-size: 1rem; } .footer-bottom { flex-direction: column; } }
     @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; transition-duration: .01ms !important; } }
   </style>
 </head>
@@ -295,6 +296,7 @@
   <div class="loader" id="loader" aria-label="Loading menu">
     <video class="loader-video" src="bg vid.MP4" autoplay muted loop playsinline aria-hidden="true"></video><div class="loader-inner"><img class="loader-logo" src="salim_shoras-removebg-preview.png" alt="Shorash Moradi Cafe logo"><img class="loader-arabic-logo" src="Shorash 1.png" alt="Shorash Moradi Arabic logo"><div class="intro-languages" aria-label="Choose language"><button class="intro-language" type="button" data-intro-language="en">English</button><button class="intro-language" type="button" data-intro-language="ar">العربية</button><button class="intro-language" type="button" data-intro-language="ku">Badînî</button></div><button class="intro-open" id="introOpen" type="button">Open Menu</button><audio id="introAudio" src="Intro shorash.mp3" preload="auto" autoplay playsinline></audio></div>
   </div>
+  <script>document.getElementById("introAudio").play().catch(() => {});</script>
 
   <header class="site-header">
     <div class="container nav-wrap">
@@ -342,7 +344,6 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-database-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-storage-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-analytics-compat.js"></script>
   <script>
     const firebaseConfig = {
       apiKey: "AIzaSyDs26YFg3P3ShwldPlRYPqkpUa6z71soug",
@@ -363,7 +364,6 @@
       firebaseAuth = firebase.auth(firebaseApp);
       firebaseDatabase = firebase.database(firebaseApp);
       firebaseStorage = firebase.storage(firebaseApp);
-      try { if (firebase.analytics) firebase.analytics(firebaseApp); } catch (analyticsError) { console.warn("Firebase Analytics is unavailable in this environment.", analyticsError); }
     } catch (error) {
       console.warn("Firebase is unavailable; local menu storage remains active.", error);
     }
@@ -675,8 +675,9 @@
 
     function cardTemplate(item, index) {
       const name = localized(item.name, item.nameAr, item.nameKu);
-      const description = localized(item.description, item.descriptionAr, item.descriptionKu);
-      return `<div class="col-6 col-sm-6 col-lg-4 reveal" style="transition-delay:${Math.min(index * 45, 180)}ms"><article class="menu-card" tabindex="0" role="button" data-item="${escapeAttribute(item.name)}"><div class="card-image"><img loading="lazy" src="${item.image}" alt="${escapeAttribute(name)}"></div><div class="card-body"><div class="card-meta"><h3>${escapeAttribute(name)}</h3><span class="price">${item.price}</span></div><p>${escapeAttribute(description)}</p>${item.badge ? `<span class="badge-soft">${escapeAttribute(item.badge)}</span>` : ""}</div></article></div>`;
+      const description = localized(item.description || "", item.descriptionAr, item.descriptionKu).trim();
+      const descriptionMarkup = description ? `<p>${escapeAttribute(description)}</p>` : "";
+      return `<div class="col-6 col-sm-6 col-lg-4 reveal" style="transition-delay:${Math.min(index * 45, 180)}ms"><article class="menu-card" tabindex="0" role="button" data-item="${escapeAttribute(item.name)}"><div class="card-image"><img loading="lazy" src="${item.image}" alt="${escapeAttribute(name)}"></div><div class="card-body${description ? "" : " no-description"}"><div class="card-meta"><h3>${escapeAttribute(name)}</h3><span class="price">${item.price}</span></div>${descriptionMarkup}${item.badge ? `<span class="badge-soft">${escapeAttribute(item.badge)}</span>` : ""}</div></article></div>`;
     }
 
     function bindCards() {
