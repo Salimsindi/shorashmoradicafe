@@ -222,6 +222,8 @@
     .admin-item-info strong, .admin-item-info span { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .admin-item-info span { margin-top: .2rem; color: var(--muted); font-size: .75rem; }
     .admin-price-row { display: flex; align-items: center; gap: .35rem; margin-top: .4rem; }
+    .admin-photo-row { display: flex; align-items: center; gap: .35rem; margin-top: .4rem; }
+    .admin-photo-input { min-width: 0; max-width: 170px; color: var(--muted); font-size: .68rem; }
     .admin-price-input { width: 118px; padding: .35rem .5rem; border: 1px solid var(--line); border-radius: 7px; color: var(--ink); background: rgba(255,255,255,.05); font-size: .75rem; }
     .admin-save-price { padding: .35rem .55rem; border: 1px solid var(--gold); border-radius: 7px; color: var(--gold); background: transparent; font-size: .7rem; cursor: pointer; }
     .admin-save-price:hover { color: #102f2b; background: var(--gold); }
@@ -296,7 +298,7 @@
   <div class="loader" id="loader" aria-label="Loading menu">
     <video class="loader-video" src="bg vid.MP4" autoplay muted loop playsinline aria-hidden="true"></video><div class="loader-inner"><img class="loader-logo" src="salim_shoras-removebg-preview.png" alt="Shorash Moradi Cafe logo"><img class="loader-arabic-logo" src="Shorash 1.png" alt="Shorash Moradi Arabic logo"><div class="intro-languages" aria-label="Choose language"><button class="intro-language" type="button" data-intro-language="en">English</button><button class="intro-language" type="button" data-intro-language="ar">العربية</button><button class="intro-language" type="button" data-intro-language="ku">Badînî</button></div><button class="intro-open" id="introOpen" type="button">Open Menu</button><audio id="introAudio" src="Intro shorash.mp3" preload="auto" autoplay playsinline></audio></div>
   </div>
-  <script>document.getElementById("introAudio").play().catch(() => {});</script>
+  <script>const introAudioElement = document.getElementById("introAudio"); introAudioElement.play().catch(() => { introAudioElement.dataset.autoplayBlocked = "true"; });</script>
 
   <header class="site-header">
     <div class="container nav-wrap">
@@ -843,7 +845,7 @@
       const visibleItems = menuItems.map((item, index) => ({ item, index })).filter(({ item }) => !normalizedQuery || `${item.name} ${item.category}`.toLowerCase().includes(normalizedQuery));
       const listCount = document.getElementById("adminListCount");
       if (listCount) listCount.textContent = `${visibleItems.length} of ${menuItems.length} items`;
-      adminList.innerHTML = visibleItems.length ? visibleItems.map(({ item, index }) => { const numericPrice = item.price.replace(/[^0-9]/g, ""); return `<div class="admin-item"><img src="${item.image}" alt=""><div class="admin-item-info"><strong>${escapeAttribute(item.name)}</strong><span>${escapeAttribute(item.category)}</span><div class="admin-price-row"><input class="admin-price-input" data-price-index="${index}" value="${numericPrice}" inputmode="numeric" aria-label="Price for ${escapeAttribute(item.name)}"><button class="admin-save-price" type="button" data-save-price="${index}">Save IQD</button></div></div><button class="admin-delete" type="button" data-delete-index="${index}" aria-label="Delete ${escapeAttribute(item.name)}"><i class="fa-solid fa-trash" aria-hidden="true"></i></button></div>`; }).join("") : `<div class="admin-list-empty"><i class="fa-solid fa-magnifying-glass mb-2" aria-hidden="true"></i><br>No matching items.</div>`;
+      adminList.innerHTML = visibleItems.length ? visibleItems.map(({ item, index }) => { const numericPrice = item.price.replace(/[^0-9]/g, ""); return `<div class="admin-item"><img src="${item.image}" alt=""><div class="admin-item-info"><strong>${escapeAttribute(item.name)}</strong><span>${escapeAttribute(item.category)}</span><div class="admin-price-row"><input class="admin-price-input" data-price-index="${index}" value="${numericPrice}" inputmode="numeric" aria-label="Price for ${escapeAttribute(item.name)}"><button class="admin-save-price" type="button" data-save-price="${index}">Save IQD</button></div><div class="admin-photo-row"><input class="admin-photo-input" data-photo-index="${index}" type="file" accept="image/*" aria-label="Choose photo for ${escapeAttribute(item.name)}"><button class="admin-save-price" type="button" data-save-photo="${index}">Save photo</button></div></div><button class="admin-delete" type="button" data-delete-index="${index}" aria-label="Delete ${escapeAttribute(item.name)}"><i class="fa-solid fa-trash" aria-hidden="true"></i></button></div>`; }).join("") : `<div class="admin-list-empty"><i class="fa-solid fa-magnifying-glass mb-2" aria-hidden="true"></i><br>No matching items.</div>`;
       updateAdminSummary();
     }
     function showAdmin() {
@@ -948,7 +950,7 @@
     document.getElementById("adminLogout").addEventListener("click", clearAdminSession);
     window.setInterval(expireAdminSession, 30000);
     document.addEventListener("visibilitychange", expireAdminSession);
-    adminList.addEventListener("click", async event => { const deleteButton = event.target.closest("[data-delete-index]"); if (deleteButton) { menuItems.splice(Number(deleteButton.dataset.deleteIndex), 1); syncCategories(); renderMenu(searchInput.value); refreshAdminList(); try { await persistMenu(); } catch (error) { adminCategoryError.textContent = error.message; } return; } const saveButton = event.target.closest("[data-save-price]"); if (!saveButton) return; const index = Number(saveButton.dataset.savePrice); const priceInput = adminList.querySelector(`[data-price-index="${index}"]`); const rawPrice = priceInput.value.replace(/[^0-9]/g, ""); if (!rawPrice) return; menuItems[index].price = `IQD ${Number(rawPrice).toLocaleString("en-US")}`; renderMenu(searchInput.value); refreshAdminList(); try { await persistMenu(); } catch (error) { adminCategoryError.textContent = error.message; } });
+    adminList.addEventListener("click", async event => { const deleteButton = event.target.closest("[data-delete-index]"); if (deleteButton) { menuItems.splice(Number(deleteButton.dataset.deleteIndex), 1); syncCategories(); renderMenu(searchInput.value); refreshAdminList(); try { await persistMenu(); } catch (error) { adminCategoryError.textContent = error.message; } return; } const photoButton = event.target.closest("[data-save-photo]"); if (photoButton) { const index = Number(photoButton.dataset.savePhoto); const photoInput = adminList.querySelector(`[data-photo-index="${index}"]`); const file = photoInput?.files[0]; if (!file) return; photoButton.disabled = true; photoButton.textContent = "Saving..."; try { menuItems[index].image = await dataUrlFromFile(file); await persistMenu(); renderMenu(searchInput.value); refreshAdminList(); } catch (error) { adminCategoryError.textContent = error.message; } finally { photoButton.disabled = false; } return; } const saveButton = event.target.closest("[data-save-price]"); if (!saveButton) return; const index = Number(saveButton.dataset.savePrice); const priceInput = adminList.querySelector(`[data-price-index="${index}"]`); const rawPrice = priceInput.value.replace(/[^0-9]/g, ""); if (!rawPrice) return; menuItems[index].price = `IQD ${Number(rawPrice).toLocaleString("en-US")}`; renderMenu(searchInput.value); refreshAdminList(); try { await persistMenu(); } catch (error) { adminCategoryError.textContent = error.message; } });
     languageToggle.addEventListener("click", event => { event.stopPropagation(); const isOpen = languagePicker.classList.toggle("open"); languageToggle.setAttribute("aria-expanded", String(isOpen)); });
     document.querySelectorAll(".language-option").forEach(option => option.addEventListener("click", () => setLanguage(option.dataset.language)));
     document.addEventListener("click", event => { if (!event.target.closest("#languagePicker")) { languagePicker.classList.remove("open"); languageToggle.setAttribute("aria-expanded", "false"); } });
@@ -1033,10 +1035,11 @@
     function startIntroAudio() {
       if (introAudioStarted) return;
       introAudioStarted = true;
-      introAudio.play().catch(() => { introAudioStarted = false; });
+      introAudio.play().then(() => { delete introAudio.dataset.autoplayBlocked; }).catch(() => { introAudioStarted = false; });
     }
     startIntroAudio();
     introOpen.addEventListener("click", () => {
+      if (introAudio.dataset.autoplayBlocked === "true") startIntroAudio();
       introOpen.disabled = true;
       document.body.classList.remove("intro-active");
       document.body.classList.add("menu-opening");
