@@ -361,6 +361,7 @@
     let firebaseStorage = null;
     let firebaseAuth = null;
     let pendingMenuWrite = null;
+    let menuWriteQueue = Promise.resolve();
     try {
       const firebaseApp = firebase.initializeApp(firebaseConfig);
       firebaseAuth = firebase.auth(firebaseApp);
@@ -786,14 +787,11 @@
         pendingMenuWrite = null;
         throw new Error("Firebase is unavailable. Changes were saved only in this browser.");
       }
-      try {
-        await firebaseDatabase.ref("menu").set(payload);
-      } catch (error) {
+      menuWriteQueue = menuWriteQueue.catch(() => {}).then(() => firebaseDatabase.ref("menu").set(payload)).catch(error => {
         console.warn("Firebase menu sync failed.", error);
         throw new Error("Could not save this change online. Check Firebase Database permissions and try again.");
-      } finally {
-        pendingMenuWrite = null;
-      }
+      }).finally(() => { pendingMenuWrite = null; });
+      return await menuWriteQueue;
     }
     function updateAdminSummary() {
       const itemCount = document.getElementById("adminItemCount");
@@ -908,6 +906,10 @@
         };
         reader.readAsDataURL(file);
       });
+      return await compressImage();
+    }
+    async function uploadImageToStorage(file) {
+      if (!firebaseStorage || !file) return null;
       if (firebaseStorage) {
         try {
           const safeName = `${Date.now()}-${file.name}`.replace(/[^a-zA-Z0-9._-]/g, "-");
@@ -919,7 +921,7 @@
           console.warn("Firebase Storage upload failed; using compressed online database image fallback.", error);
         }
       }
-      return await compressImage();
+      return null;
     }
 
     addAdminLanguageFields();
@@ -956,7 +958,7 @@
     document.addEventListener("click", event => { if (!event.target.closest("#languagePicker")) { languagePicker.classList.remove("open"); languageToggle.setAttribute("aria-expanded", "false"); } });
     document.getElementById("categoryForm").addEventListener("submit", async event => { event.preventDefault(); const input = document.getElementById("adminCategoryName"); const name = input.value.trim(); const nameAr = document.getElementById("adminCategoryNameAr").value.trim(); const nameKu = document.getElementById("adminCategoryNameKu").value.trim(); if (!name) return; if (categoryDetails[name]) { adminCategoryError.textContent = "That category already exists."; return; } categoryDetails[name] = [adminCategoryIcon.value, "Fresh from the cafe.", nameAr, "", nameKu]; adminCategoryError.textContent = ""; input.value = ""; document.getElementById("adminCategoryNameAr").value = ""; document.getElementById("adminCategoryNameKu").value = ""; syncCategories(); try { await persistMenu(); } catch (error) { adminCategoryError.textContent = error.message; } });
     adminCategoryList.addEventListener("click", async event => { const button = event.target.closest("[data-delete-category]"); if (!button) return; const category = button.dataset.deleteCategory; if (menuItems.some(item => item.category === category)) { adminCategoryError.textContent = "Move or delete its items before removing this category."; return; } delete categoryDetails[category]; adminCategoryError.textContent = ""; syncCategories(); try { await persistMenu(); } catch (error) { adminCategoryError.textContent = error.message; } });
-    document.getElementById("itemForm").addEventListener("submit", async event => { event.preventDefault(); const submitButton = event.target.querySelector("button[type=submit]"); const category = adminItemCategory.value; const imageFile = document.getElementById("adminItemImage").files[0]; const rawPrice = document.getElementById("adminItemPrice").value.replace(/[^0-9]/g, ""); submitButton.disabled = true; submitButton.innerHTML = '<i class="fa-solid fa-spinner fa-spin" aria-hidden="true"></i> Saving...'; adminCategoryError.textContent = ""; try { const image = await dataUrlFromFile(imageFile); menuItems.push({ name: document.getElementById("adminItemName").value.trim(), nameAr: document.getElementById("adminItemNameAr").value.trim(), nameKu: document.getElementById("adminItemNameKu").value.trim(), category, price: `IQD ${Number(rawPrice || 0).toLocaleString("en-US")}`, description: document.getElementById("adminItemDescription").value.trim(), descriptionAr: document.getElementById("adminItemDescriptionAr").value.trim(), descriptionKu: document.getElementById("adminItemDescriptionKu").value.trim(), image }); await persistMenu(); syncCategories(); renderMenu(searchInput.value); refreshAdminList(); event.target.reset(); } catch (error) { adminCategoryError.textContent = error.message || "Could not add this item."; } finally { submitButton.disabled = false; submitButton.innerHTML = '<i class="fa-solid fa-plus" aria-hidden="true"></i> Add to menu'; } });
+    document.getElementById("itemForm").addEventListener("submit", async event => { event.preventDefault(); const submitButton = event.target.querySelector("button[type=submit]"); const category = adminItemCategory.value; const imageFile = document.getElementById("adminItemImage").files[0]; const rawPrice = document.getElementById("adminItemPrice").value.replace(/[^0-9]/g, ""); submitButton.disabled = true; submitButton.innerHTML = '<i class="fa-solid fa-spinner fa-spin" aria-hidden="true"></i> Adding...'; adminCategoryError.textContent = ""; try { const image = await dataUrlFromFile(imageFile); const newItem = { name: document.getElementById("adminItemName").value.trim(), nameAr: document.getElementById("adminItemNameAr").value.trim(), nameKu: document.getElementById("adminItemNameKu").value.trim(), category, price: `IQD ${Number(rawPrice || 0).toLocaleString("en-US")}`, description: document.getElementById("adminItemDescription").value.trim(), descriptionAr: document.getElementById("adminItemDescriptionAr").value.trim(), descriptionKu: document.getElementById("adminItemDescriptionKu").value.trim(), image }; menuItems.push(newItem); syncCategories(); renderMenu(searchInput.value); refreshAdminList(); event.target.reset(); submitButton.disabled = false; submitButton.innerHTML = '<i class="fa-solid fa-plus" aria-hidden="true"></i> Add to menu'; persistMenu().catch(error => { adminCategoryError.textContent = `Local item saved. Online sync failed: ${error.message}`; }); if (imageFile && firebaseStorage) { uploadImageToStorage(imageFile).then(storageUrl => { const itemIndex = menuItems.indexOf(newItem); if (!storageUrl || itemIndex < 0) return; newItem.image = storageUrl; renderMenu(searchInput.value); refreshAdminList(); return persistMenu(); }).catch(error => { console.warn("Background image upload failed; compressed image remains saved locally.", error); }); } } catch (error) { adminCategoryError.textContent = error.message || "Could not add this item."; submitButton.disabled = false; submitButton.innerHTML = '<i class="fa-solid fa-plus" aria-hidden="true"></i> Add to menu'; } });
     function applyLiveMenu(items, customCategories = {}) {
       menuItems.splice(0, menuItems.length, ...items);
       Object.keys(categoryDetails).filter(name => !defaultCategories.includes(name) && !customCategories[name]).forEach(name => delete categoryDetails[name]);
