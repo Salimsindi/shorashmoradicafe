@@ -258,6 +258,14 @@
     .admin-error { min-height: 1.2rem; color: var(--coffee); font-size: .8rem; }
     .admin-access { display: inline-grid; width: 22px; height: 22px; place-items: center; margin-left: .35rem; color: rgba(248,239,227,.12); font-size: .62rem; transition: color .25s ease; }
     .admin-access:hover, .admin-access:focus-visible { color: var(--gold); outline: none; }
+    @media (max-width: 480px) {
+      .admin-grid { grid-template-columns: minmax(0, 1fr); }
+      .admin-grid > *, .admin-form > * { min-width: 0; }
+      .admin-item { min-width: 0; flex-wrap: wrap; }
+      .admin-item-info { flex: 1 1 120px; }
+      .admin-photo-row { flex-wrap: wrap; }
+      .admin-photo-input { width: min(100%, 170px); }
+    }
     @media (max-width: 767px) { .admin-view { padding: 1rem 0 3rem; } .admin-grid { grid-template-columns: 1fr; } .admin-top { align-items: start; } .admin-title { font-size: 2.1rem; } .admin-summary { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .45rem; } .admin-stat { padding: .75rem .6rem; } .admin-stat strong { font-size: 1.15rem; } .admin-stat span { font-size: .55rem; letter-spacing: .03em; } .admin-item { align-items: start; } .admin-price-row { flex-wrap: wrap; } .admin-price-input { width: 105px; } .admin-list-toolbar { align-items: stretch; flex-direction: column; } .admin-list-search { max-width: none; width: 100%; } .admin-login { margin-top: 4vh; padding: 1.35rem; } .admin-login-cowboy { width: 72px; height: 78px; } .admin-login-arabic { width: 125px; height: 70px; } }
     .loader { position: fixed; inset: 0; z-index: 100; display: grid; place-items: center; overflow: hidden; color: #F5F5F5; background: #17110d; transition: opacity .5s ease, visibility .5s ease; }
     .loader-video { position: absolute; inset: 0; z-index: 0; width: 100%; height: 100%; object-fit: cover; opacity: .62; }
@@ -515,9 +523,14 @@
     let allCategories = ["All", ...categories];
     const cachedImagePlaceholder = "data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=";
     const defaultMenuImage = "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&w=900&q=80";
+    let menuItemDatabaseKeys = [];
     function normalizeMenuItems(value) {
-      const records = Array.isArray(value) ? value : value && typeof value === "object" ? Object.values(value) : [];
-      return records.filter(item => item && typeof item === "object" && !Array.isArray(item)).map(item => ({
+      const entries = Array.isArray(value)
+        ? value.map((item, index) => [String(index), item])
+        : value && typeof value === "object" ? Object.entries(value) : [];
+      const validEntries = entries.filter(([, item]) => item && typeof item === "object" && !Array.isArray(item));
+      menuItemDatabaseKeys = validEntries.map(([key]) => key);
+      return validEntries.map(([, item]) => ({
         ...item,
         name: typeof item.name === "string" ? item.name : "Menu item",
         category: typeof item.category === "string" ? item.category : "Uncategorized",
@@ -879,28 +892,15 @@
       const customCategories = Object.fromEntries(Object.entries(categoryDetails).filter(([name]) => !defaultCategories.includes(name)));
       pendingMenuWrite = { addingItem: true };
       try {
-        const result = await firebaseDatabase.ref("menu").transaction(current => {
-          if (!current || !current.items || typeof current.items !== "object") return;
-          let nextItems;
-          if (Array.isArray(current.items)) {
-            nextItems = [...current.items, item];
-          } else {
-            nextItems = { ...current.items };
-            const indexes = Object.keys(nextItems).map(Number).filter(Number.isInteger);
-            nextItems[String(indexes.length ? Math.max(...indexes) + 1 : 0)] = item;
-          }
-          return {
-            ...current,
-            items: nextItems,
-            customCategories: { ...(current.customCategories || {}), ...customCategories }
-          };
-        }, undefined, false);
-        if (!result.committed) throw new Error("Firebase did not return the existing menu, so no items were changed. Check the connection and try again.");
-        const savedMenu = result.snapshot.val();
+        const itemRef = firebaseDatabase.ref("menu/items").push();
+        await firebaseDatabase.ref("menu").update({
+          [`items/${itemRef.key}`]: item,
+          customCategories
+        });
+        menuItemDatabaseKeys[menuItems.indexOf(item)] = itemRef.key;
         pendingMenuWrite = null;
-        applyLiveMenu(savedMenu.items, savedMenu.customCategories || {});
-        try { localStorage.setItem("shorash-menu-categories", JSON.stringify(savedMenu.customCategories || {})); } catch (error) { console.warn("Local category cache is unavailable.", error); }
-        menuChannel?.postMessage({ type: "menu-update", items: menuItems, customCategories: savedMenu.customCategories || {} });
+        try { localStorage.setItem("shorash-menu-categories", JSON.stringify(customCategories)); } catch (error) { console.warn("Local category cache is unavailable.", error); }
+        menuChannel?.postMessage({ type: "menu-update", items: menuItems, customCategories });
       } catch (error) {
         pendingMenuWrite = null;
         console.warn("Firebase menu item append failed.", error);
@@ -1033,9 +1033,9 @@
       }
     }
 
-    async function updateMenuItemImageSafely(itemId, image) {
+    async function updateMenuItemImageSafely(itemId, image, index = menuItems.findIndex(item => item.id === itemId)) {
       if (!firebaseDatabase) {
-        const localItem = menuItems.find(item => item.id === itemId);
+        const localItem = Number.isInteger(index) ? menuItems[index] : menuItems.find(item => item.id === itemId);
         if (!localItem) throw new Error("The menu item could not be found.");
         localItem.image = image;
         await persistMenu();
@@ -1045,62 +1045,30 @@
       }
       pendingMenuWrite = { updatingItemImage: itemId };
       try {
-        const result = await firebaseDatabase.ref("menu").transaction(current => {
-          if (!current?.items || typeof current.items !== "object") return;
-          let found = false;
-          const updateItem = item => {
-            if (!item || item.id !== itemId) return item;
-            found = true;
-            return { ...item, image };
-          };
-          const items = Array.isArray(current.items)
-            ? current.items.map(updateItem)
-            : Object.fromEntries(Object.entries(current.items).map(([key, item]) => [key, updateItem(item)]));
-          if (!found) return;
-          return { ...current, items };
-        }, undefined, false);
-        if (!result.committed) throw new Error("The item saved, but Firebase could not attach the uploaded photo.");
-        const savedMenu = result.snapshot.val();
+        let itemKey = menuItemDatabaseKeys[index];
+        if (!itemKey) {
+          const matchingItem = await firebaseDatabase.ref("menu/items").orderByChild("id").equalTo(itemId).once("value");
+          itemKey = Object.keys(matchingItem.val() || {})[0];
+        }
+        if (!itemKey) throw new Error("The menu item could not be found in Firebase.");
+        await firebaseDatabase.ref(`menu/items/${itemKey}/image`).set(image);
+        const localItem = Number.isInteger(index) ? menuItems[index] : menuItems.find(item => item.id === itemId);
+        if (localItem) localItem.image = image;
         pendingMenuWrite = null;
-        applyLiveMenu(savedMenu.items, savedMenu.customCategories || {});
-        menuChannel?.postMessage({ type: "menu-update", items: menuItems, customCategories: savedMenu.customCategories || {} });
+        try { localStorage.setItem("shorash-menu-items", JSON.stringify(makeFastMenuCache(menuItems))); } catch (error) { console.warn("Could not cache the updated menu photo locally.", error); }
+        const customCategories = Object.fromEntries(Object.entries(categoryDetails).filter(([name]) => !defaultCategories.includes(name)));
+        menuChannel?.postMessage({ type: "menu-update", items: menuItems, customCategories });
+        renderMenu(searchInput.value);
+        refreshAdminList(document.getElementById("adminListSearch")?.value || "");
       } finally {
         pendingMenuWrite = null;
       }
     }
 
     async function updateMenuItemImageAtIndexSafely(index, image) {
-      if (!firebaseDatabase) {
-        const localItem = menuItems[index];
-        if (!localItem) throw new Error("The menu item could not be found.");
-        localItem.image = image;
-        await persistMenu();
-        renderMenu(searchInput.value);
-        refreshAdminList();
-        return;
-      }
-      pendingMenuWrite = { updatingMenuImage: index };
-      try {
-        const result = await firebaseDatabase.ref("menu").transaction(current => {
-          if (!current?.items || typeof current.items !== "object") return;
-          let items;
-          if (Array.isArray(current.items)) {
-            if (!current.items[index]) return;
-            items = current.items.map((item, itemIndex) => itemIndex === index ? { ...item, image } : item);
-          } else {
-            const entries = Object.entries(current.items);
-            if (!entries[index]) return;
-            items = Object.fromEntries(entries.map(([key, item], itemIndex) => [key, itemIndex === index ? { ...item, image } : item]));
-          }
-          return { ...current, items };
-        }, undefined, false);
-        if (!result.committed) throw new Error("The photo was not saved to Firebase. The existing menu image was kept.");
-        const savedMenu = result.snapshot.val();
-        pendingMenuWrite = null;
-        applyLiveMenu(savedMenu.items, savedMenu.customCategories || {});
-      } finally {
-        pendingMenuWrite = null;
-      }
+      const item = menuItems[index];
+      if (!item) throw new Error("The menu item could not be found.");
+      await updateMenuItemImageSafely(item.id || null, image, index);
     }
 
     async function uploadNewMenuItemPhoto(itemId, file) {
