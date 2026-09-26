@@ -514,6 +514,23 @@
     let categories = Object.keys(categoryDetails);
     let allCategories = ["All", ...categories];
     const cachedImagePlaceholder = "data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=";
+    const defaultMenuImage = "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&w=900&q=80";
+    function normalizeMenuItems(value) {
+      const records = Array.isArray(value) ? value : value && typeof value === "object" ? Object.values(value) : [];
+      return records.filter(item => item && typeof item === "object" && !Array.isArray(item)).map(item => ({
+        ...item,
+        name: typeof item.name === "string" ? item.name : "Menu item",
+        category: typeof item.category === "string" ? item.category : "Uncategorized",
+        price: typeof item.price === "string" || typeof item.price === "number" ? String(item.price) : "",
+        description: typeof item.description === "string" ? item.description : "",
+        descriptionAr: typeof item.descriptionAr === "string" ? item.descriptionAr : "",
+        descriptionKu: typeof item.descriptionKu === "string" ? item.descriptionKu : "",
+        nameAr: typeof item.nameAr === "string" ? item.nameAr : "",
+        nameKu: typeof item.nameKu === "string" ? item.nameKu : "",
+        image: typeof item.image === "string" && item.image ? item.image : defaultMenuImage,
+        badge: typeof item.badge === "string" ? item.badge : ""
+      }));
+    }
     function makeFastMenuCache(items) {
       return items.map(item => item.image?.startsWith("data:image/") ? { ...item, image: cachedImagePlaceholder } : item);
     }
@@ -521,7 +538,7 @@
     if (savedMenu) {
       try {
         const savedItems = JSON.parse(savedMenu);
-        const fastCache = makeFastMenuCache(savedItems);
+        const fastCache = makeFastMenuCache(normalizeMenuItems(savedItems));
         menuItems.splice(0, menuItems.length, ...fastCache);
         if (fastCache.some((item, index) => item.image !== savedItems[index].image)) {
           try { localStorage.setItem("shorash-menu-items", JSON.stringify(fastCache)); } catch (error) { console.warn("Could not shrink the local menu cache.", error); }
@@ -856,6 +873,41 @@
       try { localStorage.setItem("shorash-menu-categories", JSON.stringify(customCategories)); } catch (error) { console.warn("Local category cache is unavailable.", error); }
       menuChannel?.postMessage({ type: "menu-update", ...payload });
     }
+    async function appendMenuItemSafely(item) {
+      if (!firebaseDatabase) return persistMenu();
+      if (!firebaseAuth?.currentUser || !isAdminSessionValid()) throw new Error("Admin authentication is required to save menu changes.");
+      const customCategories = Object.fromEntries(Object.entries(categoryDetails).filter(([name]) => !defaultCategories.includes(name)));
+      pendingMenuWrite = { addingItem: true };
+      try {
+        const result = await firebaseDatabase.ref("menu").transaction(current => {
+          if (!current || !current.items || typeof current.items !== "object") return;
+          let nextItems;
+          if (Array.isArray(current.items)) {
+            nextItems = [...current.items, item];
+          } else {
+            nextItems = { ...current.items };
+            const indexes = Object.keys(nextItems).map(Number).filter(Number.isInteger);
+            nextItems[String(indexes.length ? Math.max(...indexes) + 1 : 0)] = item;
+          }
+          return {
+            ...current,
+            items: nextItems,
+            customCategories: { ...(current.customCategories || {}), ...customCategories }
+          };
+        }, undefined, false);
+        if (!result.committed) throw new Error("Firebase did not return the existing menu, so no items were changed. Check the connection and try again.");
+        const savedMenu = result.snapshot.val();
+        pendingMenuWrite = null;
+        applyLiveMenu(savedMenu.items, savedMenu.customCategories || {});
+        try { localStorage.setItem("shorash-menu-categories", JSON.stringify(savedMenu.customCategories || {})); } catch (error) { console.warn("Local category cache is unavailable.", error); }
+        menuChannel?.postMessage({ type: "menu-update", items: menuItems, customCategories: savedMenu.customCategories || {} });
+      } catch (error) {
+        pendingMenuWrite = null;
+        console.warn("Firebase menu item append failed.", error);
+        if (error?.code === "PERMISSION_DENIED") throw new Error("Firebase denied the write. Check the signed-in admin account and deployed database rules.");
+        throw error;
+      }
+    }
     function updateAdminSummary() {
       const itemCount = document.getElementById("adminItemCount");
       const categoryCount = document.getElementById("adminCategoryCount");
@@ -916,8 +968,9 @@
             try {
               const blob = await fetch(item.image).then(response => response.blob());
               const file = new File([blob], `menu-photo-${Date.now()}-${index}.jpg`, { type: blob.type || "image/jpeg" });
-              const storageUrl = await menuImageFromFile(file);
+              const { image: storageUrl, warning } = await menuImageFromFile(file);
               if (storageUrl && !storageUrl.startsWith("data:image/")) { item.image = storageUrl; migrated += 1; }
+              else if (warning) console.warn(warning);
             } catch (error) {
               console.warn("Could not move an embedded menu photo to Firebase Storage.", error);
             }
@@ -1016,25 +1069,49 @@
       if (firebaseStorage) {
         try {
           const safeName = `${Date.now()}-${file.name}`.replace(/[^a-zA-Z0-9._-]/g, "-");
-          const upload = firebaseStorage.ref(`menu-images/${safeName}`).put(file);
-          const timeout = new Promise((resolve, reject) => window.setTimeout(() => reject(new Error("Storage upload timed out.")), 8000));
-          const snapshot = await Promise.race([upload, timeout]);
+          const uploadTask = firebaseStorage.ref(`menu-images/${safeName}`).put(file);
+          const snapshot = await new Promise((resolve, reject) => {
+            const timeoutId = window.setTimeout(() => {
+              uploadTask.cancel();
+              const timeoutError = new Error("Photo upload timed out.");
+              timeoutError.code = "storage/retry-limit-exceeded";
+              reject(timeoutError);
+            }, 20000);
+            uploadTask.then(result => {
+              window.clearTimeout(timeoutId);
+              resolve(result);
+            }, error => {
+              window.clearTimeout(timeoutId);
+              reject(error);
+            });
+          });
           return await snapshot.ref.getDownloadURL();
         } catch (error) {
           console.warn("Firebase Storage upload failed.", error);
-          throw new Error("Photo upload failed. Check your connection and Firebase Storage permissions, then try again.");
+          if (error?.code === "storage/unauthorized") {
+            throw new Error("Firebase Storage rejected the photo. Deploy storage.rules and confirm you are signed in with the authorized admin account.");
+          }
+          throw new Error(`Photo upload failed (${error?.code || "storage/unknown"}): ${error?.message || "Check your connection and try again."}`);
         }
       }
       return null;
     }
     async function menuImageFromFile(file) {
-      const imageData = await dataUrlFromFile(file);
-      if (!file || !firebaseStorage) return imageData;
-      const blob = await fetch(imageData).then(response => response.blob());
-      const compressedFile = new File([blob], `menu-photo-${Date.now()}.jpg`, { type: blob.type || "image/jpeg" });
-      const storageUrl = await uploadImageToStorage(compressedFile);
-      if (firebaseDatabase && !storageUrl) throw new Error("Sign in again before uploading menu photos.");
-      return storageUrl || imageData;
+      if (!file) return { image: defaultMenuImage, warning: "" };
+      let imageData = defaultMenuImage;
+      try {
+        imageData = await dataUrlFromFile(file);
+        if (!firebaseStorage) return { image: imageData, warning: "" };
+        const blob = await fetch(imageData).then(response => response.blob());
+        const compressedFile = new File([blob], `menu-photo-${Date.now()}.jpg`, { type: blob.type || "image/jpeg" });
+        const storageUrl = await uploadImageToStorage(compressedFile);
+        if (firebaseDatabase && !storageUrl) throw new Error("Sign in again before uploading menu photos.");
+        return { image: storageUrl || imageData, warning: "" };
+      } catch (error) {
+        if (!firebaseAuth?.currentUser || !isAdminSessionValid()) throw error;
+        console.warn("Using the compressed photo in the menu data because Firebase Storage is unavailable.", error);
+        return { image: imageData, warning: `Photo storage failed (${error?.message || "unknown error"}); the compressed photo was saved with the menu.` };
+      }
     }
 
     addAdminLanguageFields();
@@ -1085,7 +1162,7 @@
     document.getElementById("adminLogout").addEventListener("click", clearAdminSession);
     window.setInterval(expireAdminSession, 30000);
     document.addEventListener("visibilitychange", expireAdminSession);
-    adminList.addEventListener("click", async event => { const deleteButton = event.target.closest("[data-delete-index]"); if (deleteButton) { menuItems.splice(Number(deleteButton.dataset.deleteIndex), 1); syncCategories(); renderMenu(searchInput.value); refreshAdminList(); try { await persistMenu(); } catch (error) { adminCategoryError.textContent = error.message; } return; } const photoButton = event.target.closest("[data-save-photo]"); if (photoButton) { const index = Number(photoButton.dataset.savePhoto); const photoInput = adminList.querySelector(`[data-photo-index="${index}"]`); const file = photoInput?.files[0]; if (!file) return; photoButton.disabled = true; photoButton.textContent = "Saving..."; try { menuItems[index].image = await menuImageFromFile(file); await persistMenu(); renderMenu(searchInput.value); refreshAdminList(); } catch (error) { adminCategoryError.textContent = error.message; } finally { photoButton.disabled = false; } return; } const saveButton = event.target.closest("[data-save-price]"); if (!saveButton) return; const index = Number(saveButton.dataset.savePrice); const priceInput = adminList.querySelector(`[data-price-index="${index}"]`); const rawPrice = priceInput.value.replace(/[^0-9]/g, ""); if (!rawPrice) return; menuItems[index].price = `IQD ${Number(rawPrice).toLocaleString("en-US")}`; renderMenu(searchInput.value); refreshAdminList(); try { await persistMenu(); } catch (error) { adminCategoryError.textContent = error.message; } });
+    adminList.addEventListener("click", async event => { const deleteButton = event.target.closest("[data-delete-index]"); if (deleteButton) { menuItems.splice(Number(deleteButton.dataset.deleteIndex), 1); syncCategories(); renderMenu(searchInput.value); refreshAdminList(); try { await persistMenu(); } catch (error) { adminCategoryError.textContent = error.message; } return; } const photoButton = event.target.closest("[data-save-photo]"); if (photoButton) { const index = Number(photoButton.dataset.savePhoto); const photoInput = adminList.querySelector(`[data-photo-index="${index}"]`); const file = photoInput?.files[0]; if (!file) return; photoButton.disabled = true; photoButton.textContent = "Saving..."; try { const result = await menuImageFromFile(file); menuItems[index].image = result.image; await persistMenu(); renderMenu(searchInput.value); refreshAdminList(); adminCategoryError.textContent = result.warning; } catch (error) { adminCategoryError.textContent = error.message; } finally { photoButton.disabled = false; } return; } const saveButton = event.target.closest("[data-save-price]"); if (!saveButton) return; const index = Number(saveButton.dataset.savePrice); const priceInput = adminList.querySelector(`[data-price-index="${index}"]`); const rawPrice = priceInput.value.replace(/[^0-9]/g, ""); if (!rawPrice) return; menuItems[index].price = `IQD ${Number(rawPrice).toLocaleString("en-US")}`; renderMenu(searchInput.value); refreshAdminList(); try { await persistMenu(); } catch (error) { adminCategoryError.textContent = error.message; } });
     languageToggle.addEventListener("click", event => { event.stopPropagation(); const isOpen = languagePicker.classList.toggle("open"); languageToggle.setAttribute("aria-expanded", String(isOpen)); });
     document.querySelectorAll(".language-option").forEach(option => option.addEventListener("click", () => setLanguage(option.dataset.language)));
     document.addEventListener("click", event => { if (!event.target.closest("#languagePicker")) { languagePicker.classList.remove("open"); languageToggle.setAttribute("aria-expanded", "false"); } });
@@ -1102,7 +1179,7 @@
       submitButton.innerHTML = '<i class="fa-solid fa-spinner fa-spin" aria-hidden="true"></i> Saving...';
       adminItemError.textContent = "";
       try {
-        const image = await menuImageFromFile(imageFile);
+        const photoResult = await menuImageFromFile(imageFile);
         newItem = {
           name: document.getElementById("adminItemName").value.trim(),
           nameAr: document.getElementById("adminItemNameAr").value.trim(),
@@ -1113,7 +1190,7 @@
           descriptionAr: "",
           descriptionKu: "",
           badge: "FRESH. BOLD",
-          image
+          image: photoResult.image
         };
         menuItems.push(newItem);
         activeCategory = category;
@@ -1122,8 +1199,9 @@
         syncCategories();
         renderMenu();
         refreshAdminList();
-        await persistMenu();
+        await appendMenuItemSafely(newItem);
         event.target.reset();
+        adminItemError.textContent = photoResult.warning || "Item added to the menu.";
       } catch (error) {
         if (newItem) {
           const itemIndex = menuItems.indexOf(newItem);
@@ -1139,7 +1217,9 @@
       }
     });
     function applyLiveMenu(items, customCategories = {}) {
-      menuItems.splice(0, menuItems.length, ...items);
+      const safeItems = normalizeMenuItems(items);
+      safeItems.forEach(item => { item.category = categoryMigration(item); });
+      menuItems.splice(0, menuItems.length, ...safeItems);
       try { localStorage.setItem("shorash-menu-items", JSON.stringify(makeFastMenuCache(menuItems))); } catch (error) { console.warn("Could not cache the live menu locally.", error); }
       Object.keys(categoryDetails).filter(name => !defaultCategories.includes(name) && !customCategories[name]).forEach(name => delete categoryDetails[name]);
       Object.entries(customCategories).forEach(([name, details]) => { categoryDetails[name] = details; });
