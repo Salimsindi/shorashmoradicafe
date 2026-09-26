@@ -1197,10 +1197,6 @@
       introAudio.play().then(() => { delete introAudio.dataset.autoplayBlocked; }).catch(() => { introAudio.dataset.autoplayBlocked = "true"; });
     }
     playIntroAudio();
-    document.querySelectorAll("[data-intro-language]").forEach(button => {
-      button.addEventListener("click", playIntroAudio, { once: true });
-      button.addEventListener("keydown", playIntroAudio, { once: true });
-    });
     introOpen.addEventListener("click", async () => {
       introAudio.pause();
       introOpen.disabled = true;
