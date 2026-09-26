@@ -1073,6 +1073,9 @@
           return await snapshot.ref.getDownloadURL();
         } catch (error) {
           console.warn("Firebase Storage upload failed.", error);
+          if (["storage/no-default-bucket", "storage/bucket-not-found"].includes(error?.code)) {
+            throw new Error("Firebase Storage is not set up for this project yet. Set it up in Firebase Console, then deploy storage.rules.");
+          }
           if (error?.code === "storage/unauthorized") {
             throw new Error("Firebase Storage rejected the photo. Deploy storage.rules and confirm you are signed in with the authorized admin account.");
           }
