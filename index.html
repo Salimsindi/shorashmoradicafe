@@ -950,47 +950,6 @@
         adminList.before(toolbar);
         toolbar.querySelector("input").addEventListener("input", event => refreshAdminList(event.target.value));
       }
-      const listToolbar = listPanel?.querySelector(".admin-list-toolbar");
-      if (listToolbar && !document.getElementById("optimizeMenuPhotos")) {
-        const optimizeButton = document.createElement("button");
-        optimizeButton.className = "admin-secondary";
-        optimizeButton.id = "optimizeMenuPhotos";
-        optimizeButton.type = "button";
-        optimizeButton.innerHTML = '<i class="fa-solid fa-cloud-arrow-up" aria-hidden="true"></i> Store photos efficiently';
-        listToolbar.append(optimizeButton);
-        optimizeButton.addEventListener("click", async () => {
-          const embeddedItems = menuItems.map((item, index) => ({ item, index })).filter(({ item }) => item.image?.startsWith("data:image/"));
-          if (!embeddedItems.length || !window.confirm(`Move ${embeddedItems.length} embedded menu photos to Firebase Storage? This one-time upload will reduce future menu downloads.`)) return;
-          optimizeButton.disabled = true;
-          let migrated = 0;
-          for (const [position, { item, index }] of embeddedItems.entries()) {
-            optimizeButton.textContent = `Uploading ${position + 1}/${embeddedItems.length}...`;
-            try {
-              const blob = await fetch(item.image).then(response => response.blob());
-              const file = new File([blob], `menu-photo-${Date.now()}-${index}.jpg`, { type: blob.type || "image/jpeg" });
-              const { image: storageUrl, warning } = await menuImageFromFile(file);
-              if (storageUrl && !storageUrl.startsWith("data:image/")) { item.image = storageUrl; migrated += 1; }
-              else if (warning) console.warn(warning);
-            } catch (error) {
-              console.warn("Could not move an embedded menu photo to Firebase Storage.", error);
-            }
-          }
-          if (migrated) {
-            try {
-              await persistMenu();
-              renderMenu(searchInput.value);
-              refreshAdminList(document.getElementById("adminListSearch")?.value || "");
-              adminCategoryError.textContent = `Moved ${migrated} of ${embeddedItems.length} photos. Future menu downloads will be smaller.`;
-            } catch (error) {
-              adminCategoryError.textContent = `Moved ${migrated} photos, but could not update the online menu: ${error.message}`;
-            }
-          } else {
-            adminCategoryError.textContent = "No photos were moved. Check Firebase Storage permissions and try again.";
-          }
-          optimizeButton.disabled = false;
-          optimizeButton.innerHTML = '<i class="fa-solid fa-cloud-arrow-up" aria-hidden="true"></i> Store photos efficiently';
-        });
-      }
       updateAdminSummary();
     }
     function refreshAdminList(query = "") {
@@ -1064,45 +1023,13 @@
       });
       return await compressImage();
     }
-    async function uploadImageToStorage(file) {
-      if (!firebaseStorage || !file || !firebaseAuth?.currentUser || !isAdminSessionValid()) return null;
-      if (firebaseStorage) {
-        try {
-          const safeName = `${Date.now()}-${file.name}`.replace(/[^a-zA-Z0-9._-]/g, "-");
-          const snapshot = await firebaseStorage.ref(`menu-images/${safeName}`).put(file);
-          return await snapshot.ref.getDownloadURL();
-        } catch (error) {
-          console.warn("Firebase Storage upload failed.", error);
-          if (["storage/no-default-bucket", "storage/bucket-not-found"].includes(error?.code)) {
-            throw new Error("Firebase Storage is not set up for this project yet. Set it up in Firebase Console, then deploy storage.rules.");
-          }
-          if (error?.code === "storage/unauthorized") {
-            throw new Error("Firebase Storage rejected the photo. Deploy storage.rules and confirm you are signed in with the authorized admin account.");
-          }
-          throw new Error(`Photo upload failed (${error?.code || "storage/unknown"}): ${error?.message || "Check your connection and try again."}`);
-        }
-      }
-      return null;
-    }
     async function menuImageFromFile(file) {
       if (!file) return { image: defaultMenuImage, warning: "" };
-      let imageData = defaultMenuImage;
       try {
-        imageData = await dataUrlFromFile(file);
-        if (!firebaseStorage) {
-          return firebaseDatabase
-            ? { image: null, warning: "Item saved, but Firebase Storage is unavailable, so the photo was not uploaded." }
-            : { image: imageData, warning: "" };
-        }
-        const blob = await fetch(imageData).then(response => response.blob());
-        const compressedFile = new File([blob], `menu-photo-${Date.now()}.jpg`, { type: blob.type || "image/jpeg" });
-        const storageUrl = await uploadImageToStorage(compressedFile);
-        if (firebaseDatabase && !storageUrl) throw new Error("Sign in again before uploading menu photos.");
-        return { image: storageUrl || imageData, warning: "" };
+        return { image: await dataUrlFromFile(file), warning: "" };
       } catch (error) {
-        if (!firebaseAuth?.currentUser || !isAdminSessionValid()) throw error;
-        console.warn("Could not upload the menu photo to Firebase Storage.", error);
-        return { image: null, warning: `Photo upload failed: ${error?.message || "check your Firebase Storage permissions and connection."}` };
+        console.warn("Could not prepare the menu photo for Firebase Database.", error);
+        return { image: null, warning: `Photo processing failed: ${error?.message || "choose another image and try again."}` };
       }
     }
 
@@ -1142,17 +1069,51 @@
       }
     }
 
+    async function updateMenuItemImageAtIndexSafely(index, image) {
+      if (!firebaseDatabase) {
+        const localItem = menuItems[index];
+        if (!localItem) throw new Error("The menu item could not be found.");
+        localItem.image = image;
+        await persistMenu();
+        renderMenu(searchInput.value);
+        refreshAdminList();
+        return;
+      }
+      pendingMenuWrite = { updatingMenuImage: index };
+      try {
+        const result = await firebaseDatabase.ref("menu").transaction(current => {
+          if (!current?.items || typeof current.items !== "object") return;
+          let items;
+          if (Array.isArray(current.items)) {
+            if (!current.items[index]) return;
+            items = current.items.map((item, itemIndex) => itemIndex === index ? { ...item, image } : item);
+          } else {
+            const entries = Object.entries(current.items);
+            if (!entries[index]) return;
+            items = Object.fromEntries(entries.map(([key, item], itemIndex) => [key, itemIndex === index ? { ...item, image } : item]));
+          }
+          return { ...current, items };
+        }, undefined, false);
+        if (!result.committed) throw new Error("The photo was not saved to Firebase. The existing menu image was kept.");
+        const savedMenu = result.snapshot.val();
+        pendingMenuWrite = null;
+        applyLiveMenu(savedMenu.items, savedMenu.customCategories || {});
+      } finally {
+        pendingMenuWrite = null;
+      }
+    }
+
     async function uploadNewMenuItemPhoto(itemId, file) {
       try {
         const result = await menuImageFromFile(file);
-        if (!result.image || result.image.startsWith("data:image/")) {
-          adminItemError.textContent = result.warning || "Item saved, but its photo could not be uploaded.";
+        if (!result.image) {
+          adminItemError.textContent = result.warning || "Item saved, but its photo could not be processed.";
           return;
         }
         await updateMenuItemImageSafely(itemId, result.image);
-        adminItemError.textContent = "Item and photo saved successfully.";
+        adminItemError.textContent = "Item and photo saved to the menu database.";
       } catch (error) {
-        adminItemError.textContent = `Item saved, but its photo could not be uploaded: ${error.message || "check Firebase Storage and try again."}`;
+        adminItemError.textContent = `Item saved, but its photo could not be saved: ${error.message || "check Firebase Database permissions and try again."}`;
       }
     }
 
@@ -1190,7 +1151,52 @@
     document.getElementById("adminLogout").addEventListener("click", clearAdminSession);
     window.setInterval(expireAdminSession, 30000);
     document.addEventListener("visibilitychange", expireAdminSession);
-    adminList.addEventListener("click", async event => { const deleteButton = event.target.closest("[data-delete-index]"); if (deleteButton) { menuItems.splice(Number(deleteButton.dataset.deleteIndex), 1); syncCategories(); renderMenu(searchInput.value); refreshAdminList(); try { await persistMenu(); } catch (error) { adminCategoryError.textContent = error.message; } return; } const photoButton = event.target.closest("[data-save-photo]"); if (photoButton) { const index = Number(photoButton.dataset.savePhoto); const photoInput = adminList.querySelector(`[data-photo-index="${index}"]`); const file = photoInput?.files[0]; if (!file) return; photoButton.disabled = true; photoButton.textContent = "Saving..."; try { const result = await menuImageFromFile(file); menuItems[index].image = result.image; await persistMenu(); renderMenu(searchInput.value); refreshAdminList(); adminCategoryError.textContent = result.warning; } catch (error) { adminCategoryError.textContent = error.message; } finally { photoButton.disabled = false; } return; } const saveButton = event.target.closest("[data-save-price]"); if (!saveButton) return; const index = Number(saveButton.dataset.savePrice); const priceInput = adminList.querySelector(`[data-price-index="${index}"]`); const rawPrice = priceInput.value.replace(/[^0-9]/g, ""); if (!rawPrice) return; menuItems[index].price = `IQD ${Number(rawPrice).toLocaleString("en-US")}`; renderMenu(searchInput.value); refreshAdminList(); try { await persistMenu(); } catch (error) { adminCategoryError.textContent = error.message; } });
+    adminList.addEventListener("click", async event => {
+      const deleteButton = event.target.closest("[data-delete-index]");
+      if (deleteButton) {
+        menuItems.splice(Number(deleteButton.dataset.deleteIndex), 1);
+        syncCategories();
+        renderMenu(searchInput.value);
+        refreshAdminList();
+        try { await persistMenu(); } catch (error) { adminCategoryError.textContent = error.message; }
+        return;
+      }
+
+      const photoButton = event.target.closest("[data-save-photo]");
+      if (photoButton) {
+        const index = Number(photoButton.dataset.savePhoto);
+        const photoInput = adminList.querySelector(`[data-photo-index="${index}"]`);
+        const file = photoInput?.files[0];
+        if (!file) return;
+        photoButton.disabled = true;
+        photoButton.textContent = "Uploading...";
+        try {
+          const result = await menuImageFromFile(file);
+          if (!result.image) {
+            adminCategoryError.textContent = result.warning || "The photo could not be processed; the existing menu image was kept.";
+            return;
+          }
+          await updateMenuItemImageAtIndexSafely(index, result.image);
+          adminCategoryError.textContent = "Photo saved to the menu database.";
+        } catch (error) {
+          adminCategoryError.textContent = error.message || "Photo upload failed; the existing menu image was kept.";
+        } finally {
+          photoButton.disabled = false;
+        }
+        return;
+      }
+
+      const saveButton = event.target.closest("[data-save-price]");
+      if (!saveButton) return;
+      const index = Number(saveButton.dataset.savePrice);
+      const priceInput = adminList.querySelector(`[data-price-index="${index}"]`);
+      const rawPrice = priceInput.value.replace(/[^0-9]/g, "");
+      if (!rawPrice) return;
+      menuItems[index].price = `IQD ${Number(rawPrice).toLocaleString("en-US")}`;
+      renderMenu(searchInput.value);
+      refreshAdminList();
+      try { await persistMenu(); } catch (error) { adminCategoryError.textContent = error.message; }
+    });
     languageToggle.addEventListener("click", event => { event.stopPropagation(); const isOpen = languagePicker.classList.toggle("open"); languageToggle.setAttribute("aria-expanded", String(isOpen)); });
     document.querySelectorAll(".language-option").forEach(option => option.addEventListener("click", () => setLanguage(option.dataset.language)));
     document.addEventListener("click", event => { if (!event.target.closest("#languagePicker")) { languagePicker.classList.remove("open"); languageToggle.setAttribute("aria-expanded", "false"); } });
@@ -1230,7 +1236,7 @@
         refreshAdminList();
         await appendMenuItemSafely(newItem);
         event.target.reset();
-        adminItemError.textContent = imageFile ? "Item saved. Uploading photo..." : "Item added to the menu.";
+        adminItemError.textContent = imageFile ? "Item saved. Saving photo to the menu database..." : "Item added to the menu.";
         if (imageFile) void uploadNewMenuItemPhoto(itemId, imageFile);
       } catch (error) {
         if (newItem) {
