@@ -1038,6 +1038,11 @@
     }
 
     addAdminLanguageFields();
+    const adminItemError = document.createElement("div");
+    adminItemError.className = "admin-error";
+    adminItemError.id = "adminItemError";
+    adminItemError.setAttribute("aria-live", "polite");
+    document.getElementById("itemForm").querySelector('button[type="submit"]').before(adminItemError);
     addAdminLoginBrand();
     document.querySelector('label[for="adminUsername"]').textContent = "Admin email";
     document.getElementById("adminUsername").type = "email";
@@ -1067,10 +1072,10 @@
       const form = event.currentTarget;
       const submitButton = event.submitter || form.querySelector('button[type="submit"]');
       if (submitButton) submitButton.disabled = true;
-      adminCategoryError.textContent = "Loading the current menu...";
+      adminItemError.textContent = "Loading the current menu...";
       menuDataReadyPromise.then(() => {
         if (submitButton) submitButton.disabled = false;
-        adminCategoryError.textContent = "";
+        adminItemError.textContent = "";
         form.requestSubmit(submitButton || undefined);
       });
     }, true);
@@ -1092,13 +1097,13 @@
       const category = adminItemCategory.value;
       const imageFile = document.getElementById("adminItemImage").files[0];
       const rawPrice = document.getElementById("adminItemPrice").value.replace(/[^0-9]/g, "");
-      let itemAdded = false;
+      let newItem = null;
       submitButton.disabled = true;
-      submitButton.innerHTML = '<i class="fa-solid fa-spinner fa-spin" aria-hidden="true"></i> Adding...';
-      adminCategoryError.textContent = "";
+      submitButton.innerHTML = '<i class="fa-solid fa-spinner fa-spin" aria-hidden="true"></i> Saving...';
+      adminItemError.textContent = "";
       try {
         const image = await menuImageFromFile(imageFile);
-        const newItem = {
+        newItem = {
           name: document.getElementById("adminItemName").value.trim(),
           nameAr: document.getElementById("adminItemNameAr").value.trim(),
           nameKu: document.getElementById("adminItemNameKu").value.trim(),
@@ -1111,24 +1116,23 @@
           image
         };
         menuItems.push(newItem);
-        itemAdded = true;
-        await persistMenu();
-        itemAdded = false;
         activeCategory = category;
         searchInput.value = "";
         clearSearch.classList.remove("visible");
         syncCategories();
         renderMenu();
         refreshAdminList();
+        await persistMenu();
         event.target.reset();
       } catch (error) {
-        if (itemAdded) {
-          menuItems.pop();
+        if (newItem) {
+          const itemIndex = menuItems.indexOf(newItem);
+          if (itemIndex !== -1) menuItems.splice(itemIndex, 1);
           syncCategories();
           renderMenu(searchInput.value);
           refreshAdminList();
         }
-        adminCategoryError.textContent = error.message || "Could not add this item.";
+        adminItemError.textContent = error.message || "Could not add this item.";
       } finally {
         submitButton.disabled = false;
         submitButton.innerHTML = '<i class="fa-solid fa-plus" aria-hidden="true"></i> Add to menu';
