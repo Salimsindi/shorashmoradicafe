@@ -313,10 +313,8 @@
   <body class="intro-active">
   <div class="scroll-progress" id="scrollProgress" aria-hidden="true"></div>
   <div class="loader" id="loader" aria-label="Loading menu">
-    <video class="loader-video" src="bg vid.MP4" autoplay muted loop playsinline aria-hidden="true"></video><div class="loader-inner"><img class="loader-logo" src="salim_shoras-removebg-preview.png" alt="Shorash Moradi Cafe logo"><img class="loader-arabic-logo" src="Shorash 1.png" alt="Shorash Moradi Arabic logo"><div class="intro-languages" aria-label="Choose language"><button class="intro-language" type="button" data-intro-language="en">English</button><button class="intro-language" type="button" data-intro-language="ar">العربية</button><button class="intro-language" type="button" data-intro-language="ku">Badînî</button></div><button class="intro-open" id="introOpen" type="button">Open Menu</button><audio id="introAudio" src="Intro shorash.mp3" preload="auto" autoplay playsinline></audio></div>
+    <video class="loader-video" src="bg vid.MP4" preload="none" muted loop playsinline aria-hidden="true"></video><div class="loader-inner"><img class="loader-logo" src="salim_shoras-removebg-preview.png" alt="Shorash Moradi Cafe logo"><img class="loader-arabic-logo" src="Shorash 1.png" alt="Shorash Moradi Arabic logo"><div class="intro-languages" aria-label="Choose language"><button class="intro-language" type="button" data-intro-language="en">English</button><button class="intro-language" type="button" data-intro-language="ar">العربية</button><button class="intro-language" type="button" data-intro-language="ku">Badînî</button></div><button class="intro-open" id="introOpen" type="button">Open Menu</button><audio id="introAudio" src="Intro shorash.mp3" preload="none"></audio></div>
   </div>
-  <script>const introAudioElement = document.getElementById("introAudio"); introAudioElement.play().catch(() => { introAudioElement.dataset.autoplayBlocked = "true"; });</script>
-
   <header class="site-header">
     <div class="container nav-wrap">
       <a class="brand" href="#top" aria-label="Shorash Moradi Cafe home"><span class="brand-mark"><img src="salim_shoras-removebg-preview.png" alt="Shorash Moradi Cafe logo"></span><span class="brand-mark brand-mark-secondary"><img src="Shorash 1.png" alt="Shorash Moradi Arabic logo"></span></a>
@@ -441,8 +439,6 @@
       { name: "Strawberry Ice Cream", category: "Ice Cream", price: "IQD 5,000", description: "Creamy strawberry ice cream with real fruit notes.", image: "https://images.unsplash.com/photo-1497034825429-c343d7c6a68f?auto=format&fit=crop&w=900&q=80" },
       { name: "Mixed Ice Cream", category: "Ice Cream", price: "IQD 5,500", description: "Three scoops of our favorite flavors in one bowl.", image: "https://images.unsplash.com/photo-1551024601-bec78aea704b?auto=format&fit=crop&w=900&q=80", badge: "Best of both" }
     ];
-
-    menuItems.splice(0, menuItems.length);
 
     const builtInArabicItems = {
       Espresso: ["إسبريسو", "قهوة مركزة وغنية بطبقة كريمية ناعمة."], Americano: ["أمريكانو", "إسبريسو ممزوج بالماء الساخن لمذاق نقي."], Cappuccino: ["كابتشينو", "إسبريسو مع حليب مبخر ورغوة كريمية."], Latte: ["لاتيه", "إسبريسو ناعم مع حليب مبخر silky ومتوازن."], Mocha: ["موكا", "إسبريسو وشوكولاتة داكنة وحليب مبخر مع رغوة."], Macchiato: ["ماكياتو", "إسبريسو مع لمسة من رغوة الحليب الناعمة."], "Turkish Coffee": ["قهوة تركية", "قهوة محضرة بالطريقة التقليدية، عطرية ومركزة."], "Iced Coffee": ["قهوة مثلجة", "قهوة باردة فوق الثلج بمذاق منعش."], "Iced Latte": ["لاتيه مثلج", "حليب بارد وإسبريسو فوق الثلج."], "Iced Mocha": ["موكا مثلجة", "شوكولاتة وإسبريسو وحليب بارد فوق الثلج."], "Fresh Orange Juice": ["عصير برتقال طازج", "برتقال معصور طازجاً، مشرق وحلو طبيعياً."], Lemonade: ["ليمونادة", "ليمونادة منزلية بنكهة حمضية منعشة."], Mojito: ["موهيتو", "نعناع طازج ولايم وصودا بنهاية باردة ومنعشة."], "Blue Lagoon": ["بلو لاغون", "كوكتيل حمضي ملون بنكهة استوائية مشرقة."], "Strawberry Cocktail": ["كوكتيل فراولة", "فراولة ناضجة وحمضيات ولمسة فوارة لطيفة."], "Fruit Cocktail": ["كوكتيل فواكه", "نكهات فواكه موسمية ممزوجة بطريقة ملونة."], Cheesecake: ["تشيزكيك", "تشيزكيك كريمي مخبوز مع قاعدة بسكويت بالزبدة."], "Chocolate Cake": ["كيكة شوكولاتة", "كيكة شوكولاتة طرية مع تغطية غاناش لامعة."], Tiramisu: ["تيراميسو", "طبقات مغمسة بالقهوة مع كريمة ماسكاربوني وكاكاو."], Brownie: ["براوني", "براوني شوكولاتة داكنة بقلب طري وغني."], "Ice Cream": ["آيس كريم", "كرَتان من اختيارك تقدمان باردتين وببساطة."], Pizza: ["بيتزا", "عجينة رقيقة ومقرمشة مع طماطم وموزاريلا وريحان."], Burger: ["برغر", "قطعة لحم مشوية مع صلصة خاصة وخضار طازجة."], Sandwich: ["ساندويتش", "خبز محمص مع حشوات طازجة وخضار."], "French Fries": ["بطاطا مقلية", "بطاطا ذهبية ومقرمشة مع ملح البحر."], "Chicken Sandwich": ["ساندويتش دجاج", "دجاج مشوي وأعشاب وخس مقرمش في خبز محمص."], "Black Tea": ["شاي أسود", "شاي كلاسيكي غني يقدم ساخناً وعطراً."], "Green Tea": ["شاي أخضر", "شاي أخضر خفيف بنهاية نظيفة ومنعشة."], "Lemon Tea": ["شاي بالليمون", "حمضيات مشرقة مع شاي دافئ ومنعش."], "Mint Tea": ["شاي بالنعناع", "شاي مهدئ مع أوراق نعناع طازجة وعطرة."], Croissant: ["كرواسون", "طبقات زبدية هشة مخبوزة طازجة للصباح."], "Egg Breakfast": ["فطور بالبيض", "بيض وخبز وجوانب موسمية لبداية يوم سهلة."], "Cheese Sandwich": ["ساندويتش جبن", "جبن مذاب وخبز محمص بقشرة ذهبية."], Pancakes: ["بان كيك", "طبقات هشة مع شراب القيقب وفواكه موسمية."], "Vanilla Ice Cream": ["آيس كريم فانيلا", "آيس كريم ناعم بنكهة الفانيلا الطبيعية."], "Chocolate Ice Cream": ["آيس كريم شوكولاتة", "آيس كريم كاكاو غني وناعم."], "Strawberry Ice Cream": ["آيس كريم فراولة", "آيس كريم كريمي بنكهة الفراولة الحقيقية."], "Mixed Ice Cream": ["آيس كريم مشكل", "ثلاث كرات من نكهاتنا المفضلة في طبق واحد."]
@@ -572,10 +568,6 @@
       brand.className = "admin-login-brand";
       brand.innerHTML = '<img class="admin-login-cowboy" src="salim_shoras-removebg-preview.png" alt="Shorash Moradi logo"><img class="admin-login-arabic" src="Shorash 1.png" alt="Shorash Moradi Arabic logo">';
       adminLoginPanel.querySelector(".admin-kicker").before(brand);
-      const status = document.createElement("div");
-      status.className = "admin-login-status";
-      status.innerHTML = '<i class="fa-solid fa-circle" aria-hidden="true"></i><span>Firebase secure access</span>';
-      adminLoginPanel.querySelector("form").before(status);
       const note = adminLoginPanel.querySelector("form p");
       if (note) note.remove();
     }
@@ -707,7 +699,23 @@
       const name = localized(item.name, item.nameAr, item.nameKu);
       const description = localized(item.description || "", item.descriptionAr, item.descriptionKu).trim();
       const descriptionMarkup = description ? `<p>${escapeAttribute(description)}</p>` : "";
-      return `<div class="col-6 col-sm-6 col-lg-4 reveal" style="transition-delay:${Math.min(index * 45, 180)}ms"><article class="menu-card" tabindex="0" role="button" data-item="${escapeAttribute(item.name)}"><div class="card-image"><img loading="lazy" src="${item.image}" alt="${escapeAttribute(name)}"></div><div class="card-body${description ? "" : " no-description"}"><div class="card-meta"><h3>${escapeAttribute(name)}</h3><span class="price">${item.price}</span></div>${descriptionMarkup}${item.badge ? `<span class="badge-soft">${escapeAttribute(item.badge)}</span>` : ""}</div></article></div>`;
+      return `<div class="col-6 col-sm-6 col-lg-4 reveal" style="transition-delay:${Math.min(index * 45, 180)}ms"><article class="menu-card" tabindex="0" role="button" data-item="${escapeAttribute(item.name)}"><div class="card-image"><img loading="lazy" decoding="async" src="${item.image}" ${responsiveImageSources(item.image)} alt="${escapeAttribute(name)}"></div><div class="card-body${description ? "" : " no-description"}"><div class="card-meta"><h3>${escapeAttribute(name)}</h3><span class="price">${item.price}</span></div>${descriptionMarkup}${item.badge ? `<span class="badge-soft">${escapeAttribute(item.badge)}</span>` : ""}</div></article></div>`;
+    }
+
+    function responsiveImageSources(image) {
+      try {
+        const source = new URL(image, location.href);
+        if (source.hostname !== "images.unsplash.com") return "";
+        const candidates = [360, 640, 900].map(width => {
+          const candidate = new URL(source);
+          candidate.searchParams.set("w", width);
+          candidate.searchParams.set("q", width === 360 ? "65" : "72");
+          return `${candidate.href} ${width}w`;
+        });
+        return `srcset="${escapeAttribute(candidates.join(", "))}" sizes="(max-width: 991px) 50vw, 33vw"`;
+      } catch (error) {
+        return "";
+      }
     }
 
     function bindCards() {
@@ -863,6 +871,46 @@
         adminList.before(toolbar);
         toolbar.querySelector("input").addEventListener("input", event => refreshAdminList(event.target.value));
       }
+      const listToolbar = listPanel?.querySelector(".admin-list-toolbar");
+      if (listToolbar && !document.getElementById("optimizeMenuPhotos")) {
+        const optimizeButton = document.createElement("button");
+        optimizeButton.className = "admin-secondary";
+        optimizeButton.id = "optimizeMenuPhotos";
+        optimizeButton.type = "button";
+        optimizeButton.innerHTML = '<i class="fa-solid fa-cloud-arrow-up" aria-hidden="true"></i> Store photos efficiently';
+        listToolbar.append(optimizeButton);
+        optimizeButton.addEventListener("click", async () => {
+          const embeddedItems = menuItems.map((item, index) => ({ item, index })).filter(({ item }) => item.image?.startsWith("data:image/"));
+          if (!embeddedItems.length || !window.confirm(`Move ${embeddedItems.length} embedded menu photos to Firebase Storage? This one-time upload will reduce future menu downloads.`)) return;
+          optimizeButton.disabled = true;
+          let migrated = 0;
+          for (const [position, { item, index }] of embeddedItems.entries()) {
+            optimizeButton.textContent = `Uploading ${position + 1}/${embeddedItems.length}...`;
+            try {
+              const blob = await fetch(item.image).then(response => response.blob());
+              const file = new File([blob], `menu-photo-${Date.now()}-${index}.jpg`, { type: blob.type || "image/jpeg" });
+              const storageUrl = await menuImageFromFile(file);
+              if (storageUrl && !storageUrl.startsWith("data:image/")) { item.image = storageUrl; migrated += 1; }
+            } catch (error) {
+              console.warn("Could not move an embedded menu photo to Firebase Storage.", error);
+            }
+          }
+          if (migrated) {
+            try {
+              await persistMenu();
+              renderMenu(searchInput.value);
+              refreshAdminList(document.getElementById("adminListSearch")?.value || "");
+              adminCategoryError.textContent = `Moved ${migrated} of ${embeddedItems.length} photos. Future menu downloads will be smaller.`;
+            } catch (error) {
+              adminCategoryError.textContent = `Moved ${migrated} photos, but could not update the online menu: ${error.message}`;
+            }
+          } else {
+            adminCategoryError.textContent = "No photos were moved. Check Firebase Storage permissions and try again.";
+          }
+          optimizeButton.disabled = false;
+          optimizeButton.innerHTML = '<i class="fa-solid fa-cloud-arrow-up" aria-hidden="true"></i> Store photos efficiently';
+        });
+      }
       updateAdminSummary();
     }
     function refreshAdminList(query = "") {
@@ -884,7 +932,7 @@
       adminDashboard.hidden = !loggedIn;
       if (loggedIn) refreshAdminList();
     }
-    function hideAdmin() { adminView.classList.remove("visible"); document.body.style.overflow = ""; history.replaceState(null, "", "#all"); }
+    function hideAdmin() { adminView.classList.remove("visible"); document.body.style.overflow = ""; history.replaceState(null, "", `#${slugify(activeCategory)}`); }
     const ADMIN_USERNAME = "xals@admin.com";
     const ADMIN_UID = "6UcQq6dBIaQXUnyAqo90EO92V6R2";
     const ADMIN_SESSION_KEY = "shorash-admin-session";
@@ -923,12 +971,12 @@
           const image = new Image();
           image.onerror = () => reject(new Error("The selected file is not a valid image."));
           image.onload = () => {
-            const scale = Math.min(1, 1200 / Math.max(image.width, image.height));
+            const scale = Math.min(1, 900 / Math.max(image.width, image.height));
             const canvas = document.createElement("canvas");
             canvas.width = Math.max(1, Math.round(image.width * scale));
             canvas.height = Math.max(1, Math.round(image.height * scale));
             canvas.getContext("2d").drawImage(image, 0, 0, canvas.width, canvas.height);
-            resolve(canvas.toDataURL("image/jpeg", .82));
+            resolve(canvas.toDataURL("image/jpeg", .72));
           };
           image.src = reader.result;
         };
@@ -950,6 +998,13 @@
         }
       }
       return null;
+    }
+    async function menuImageFromFile(file) {
+      const imageData = await dataUrlFromFile(file);
+      if (!file || !firebaseStorage) return imageData;
+      const blob = await fetch(imageData).then(response => response.blob());
+      const compressedFile = new File([blob], `menu-photo-${Date.now()}.jpg`, { type: blob.type || "image/jpeg" });
+      return await uploadImageToStorage(compressedFile) || imageData;
     }
 
     addAdminLanguageFields();
@@ -974,6 +1029,20 @@
     updateIntroLanguageState();
 
     if (location.hash === "#admin") showAdmin();
+    document.getElementById("itemForm").addEventListener("submit", event => {
+      if (menuDataReady) return;
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      const form = event.currentTarget;
+      const submitButton = event.submitter || form.querySelector('button[type="submit"]');
+      if (submitButton) submitButton.disabled = true;
+      adminCategoryError.textContent = "Loading the current menu...";
+      menuDataReadyPromise.then(() => {
+        if (submitButton) submitButton.disabled = false;
+        adminCategoryError.textContent = "";
+        form.requestSubmit(submitButton || undefined);
+      });
+    }, true);
     document.addEventListener("click", event => { if (event.target.closest("a[href=\"#admin\"]")) { event.preventDefault(); showAdmin(); } });
     document.getElementById("adminClose").addEventListener("click", hideAdmin);
     document.getElementById("adminLoginForm").addEventListener("submit", async event => { event.preventDefault(); const username = document.getElementById("adminUsername").value.trim().toLowerCase(); const password = document.getElementById("adminPassword").value; const error = document.getElementById("adminLoginError"); if (!firebaseAuth) { error.textContent = "Firebase authentication is unavailable."; return; } try { const credential = await firebaseAuth.signInWithEmailAndPassword(username, password); if (credential.user.email.toLowerCase() !== ADMIN_USERNAME || credential.user.uid !== ADMIN_UID) throw new Error("unauthorized-admin"); sessionStorage.setItem(ADMIN_SESSION_KEY, JSON.stringify({ username: credential.user.email.toLowerCase(), uid: credential.user.uid, expiresAt: Date.now() + ADMIN_SESSION_LENGTH })); error.textContent = ""; adminLoginPanel.hidden = true; adminDashboard.hidden = false; refreshAdminList(); } catch (loginError) { error.textContent = loginError.message === "unauthorized-admin" ? "This account is not an authorized admin." : "Incorrect admin email or password."; document.getElementById("adminPassword").value = ""; } });
@@ -986,7 +1055,45 @@
     document.addEventListener("click", event => { if (!event.target.closest("#languagePicker")) { languagePicker.classList.remove("open"); languageToggle.setAttribute("aria-expanded", "false"); } });
     document.getElementById("categoryForm").addEventListener("submit", async event => { event.preventDefault(); const input = document.getElementById("adminCategoryName"); const name = input.value.trim(); const nameAr = document.getElementById("adminCategoryNameAr").value.trim(); const nameKu = document.getElementById("adminCategoryNameKu").value.trim(); if (!name) return; if (categoryDetails[name]) { adminCategoryError.textContent = "That category already exists."; return; } categoryDetails[name] = [adminCategoryIcon.value, "Fresh from the cafe.", nameAr, "", nameKu]; adminCategoryError.textContent = ""; input.value = ""; document.getElementById("adminCategoryNameAr").value = ""; document.getElementById("adminCategoryNameKu").value = ""; syncCategories(); try { await persistMenu(); } catch (error) { adminCategoryError.textContent = error.message; } });
     adminCategoryList.addEventListener("click", async event => { const button = event.target.closest("[data-delete-category]"); if (!button) return; const category = button.dataset.deleteCategory; if (menuItems.some(item => item.category === category)) { adminCategoryError.textContent = "Move or delete its items before removing this category."; return; } delete categoryDetails[category]; adminCategoryError.textContent = ""; syncCategories(); try { await persistMenu(); } catch (error) { adminCategoryError.textContent = error.message; } });
-    document.getElementById("itemForm").addEventListener("submit", async event => { event.preventDefault(); const submitButton = event.target.querySelector("button[type=submit]"); const category = adminItemCategory.value; const imageFile = document.getElementById("adminItemImage").files[0]; const rawPrice = document.getElementById("adminItemPrice").value.replace(/[^0-9]/g, ""); submitButton.disabled = true; submitButton.innerHTML = '<i class="fa-solid fa-spinner fa-spin" aria-hidden="true"></i> Adding...'; adminCategoryError.textContent = ""; try { const image = await dataUrlFromFile(imageFile); const newItem = { name: document.getElementById("adminItemName").value.trim(), nameAr: document.getElementById("adminItemNameAr").value.trim(), nameKu: document.getElementById("adminItemNameKu").value.trim(), category, price: `IQD ${Number(rawPrice || 0).toLocaleString("en-US")}`, description: "", descriptionAr: "", descriptionKu: "", badge: "FRESH. BOLD", image }; menuItems.push(newItem); syncCategories(); renderMenu(searchInput.value); refreshAdminList(); event.target.reset(); submitButton.disabled = false; submitButton.innerHTML = '<i class="fa-solid fa-plus" aria-hidden="true"></i> Add to menu'; persistMenu().catch(error => { adminCategoryError.textContent = `Local item saved. Online sync failed: ${error.message}`; }); if (imageFile && firebaseStorage) { uploadImageToStorage(imageFile).then(storageUrl => { const itemIndex = menuItems.indexOf(newItem); if (!storageUrl || itemIndex < 0) return; newItem.image = storageUrl; renderMenu(searchInput.value); refreshAdminList(); return persistMenu(); }).catch(error => { console.warn("Background image upload failed; compressed image remains saved locally.", error); }); } } catch (error) { adminCategoryError.textContent = error.message || "Could not add this item."; submitButton.disabled = false; submitButton.innerHTML = '<i class="fa-solid fa-plus" aria-hidden="true"></i> Add to menu'; } });
+    document.getElementById("itemForm").addEventListener("submit", async event => {
+      event.preventDefault();
+      const submitButton = event.target.querySelector("button[type=submit]");
+      const category = adminItemCategory.value;
+      const imageFile = document.getElementById("adminItemImage").files[0];
+      const rawPrice = document.getElementById("adminItemPrice").value.replace(/[^0-9]/g, "");
+      submitButton.disabled = true;
+      submitButton.innerHTML = '<i class="fa-solid fa-spinner fa-spin" aria-hidden="true"></i> Adding...';
+      adminCategoryError.textContent = "";
+      try {
+        const image = await menuImageFromFile(imageFile);
+        const newItem = {
+          name: document.getElementById("adminItemName").value.trim(),
+          nameAr: document.getElementById("adminItemNameAr").value.trim(),
+          nameKu: document.getElementById("adminItemNameKu").value.trim(),
+          category,
+          price: `IQD ${Number(rawPrice || 0).toLocaleString("en-US")}`,
+          description: "",
+          descriptionAr: "",
+          descriptionKu: "",
+          badge: "FRESH. BOLD",
+          image
+        };
+        menuItems.push(newItem);
+        activeCategory = category;
+        searchInput.value = "";
+        clearSearch.classList.remove("visible");
+        syncCategories();
+        renderMenu();
+        refreshAdminList();
+        event.target.reset();
+        await persistMenu();
+      } catch (error) {
+        adminCategoryError.textContent = error.message || "Could not add this item.";
+      } finally {
+        submitButton.disabled = false;
+        submitButton.innerHTML = '<i class="fa-solid fa-plus" aria-hidden="true"></i> Add to menu';
+      }
+    });
     function applyLiveMenu(items, customCategories = {}) {
       menuItems.splice(0, menuItems.length, ...items);
       try { localStorage.setItem("shorash-menu-items", JSON.stringify(menuItems)); } catch (error) { console.warn("Could not cache the live menu locally.", error); }
@@ -1061,23 +1168,8 @@
     window.addEventListener("scroll", updateScrollEffects, { passive: true });
     updateScrollEffects();
     backTop.addEventListener("click", () => window.scrollTo({ top: 0, behavior: "smooth" }));
-    const introAudio = document.getElementById("introAudio");
     const introOpen = document.getElementById("introOpen");
-    let introAudioStarted = false;
-    function startIntroAudio() {
-      if (introAudioStarted) return;
-      introAudioStarted = true;
-      introAudio.play().then(() => { delete introAudio.dataset.autoplayBlocked; }).catch(() => { introAudioStarted = false; });
-    }
-    startIntroAudio();
-    introOpen.addEventListener("click", async () => {
-      if (!menuDataReady) {
-        introOpen.disabled = true;
-        introOpen.textContent = "Loading menu...";
-        await Promise.race([menuDataReadyPromise, new Promise(resolve => window.setTimeout(resolve, 3000))]);
-        updateIntroLanguageState();
-      }
-      if (introAudio.dataset.autoplayBlocked === "true") startIntroAudio();
+    introOpen.addEventListener("click", () => {
       introOpen.disabled = true;
       document.body.classList.remove("intro-active");
       document.body.classList.add("menu-opening");
