@@ -108,9 +108,10 @@
     .section-heading p { margin: 0 0 .25rem; color: var(--muted); font-size: .75rem; letter-spacing: .12em; text-transform: uppercase; }
     .menu-card { position: relative; height: 100%; overflow: hidden; border: 0; border-radius: 24px; background: #252525; box-shadow: 0 14px 34px rgba(0, 0, 0, .28); cursor: pointer; transition: transform .4s cubic-bezier(.2,.8,.2,1), box-shadow .4s ease; }
     .menu-card:hover, .menu-card:focus-visible { transform: translateY(-8px); box-shadow: 0 24px 50px rgba(0, 0, 0, .42), 0 0 0 2px rgba(255, 70, 143, .35); outline: none; }
-    .card-image { aspect-ratio: 1.18 / 1; overflow: hidden; margin: 0; border-radius: 0; background: #171717; }
-    .card-image img { width: 100%; height: 100%; display: block; object-fit: cover; filter: saturate(.82); transition: transform .7s cubic-bezier(.2,.8,.2,1), filter .5s ease; }
-    .menu-card:hover .card-image img { transform: scale(1.1); filter: saturate(1.12); }
+    .card-image { overflow: hidden; margin: 0; border-radius: 0; background: #171717; }
+    .card-image img { width: 100%; height: auto; display: block; object-fit: fill; filter: saturate(.82); transition: filter .5s ease; }
+    .card-image img[src^="data:image/gif;base64"] { aspect-ratio: 1.18 / 1; height: 100%; object-fit: cover; }
+    .menu-card:hover .card-image img { filter: saturate(1.12); }
     .card-body { position: relative; display: flex; flex-direction: column; padding: 1rem 1rem 1.15rem; min-height: 142px; background: #252525; }
     .card-body.no-description { min-height: 0; }
     .card-meta { display: flex; align-items: start; justify-content: space-between; gap: .65rem; }
@@ -473,7 +474,7 @@
       "Hot Coffee": "مشروبات دافئة ومحضرة بعناية.", "Iced Coffee": "قهوة باردة ومنعشة.", "Red Bull": "طاقة منعشة ليومك.", "Bris Mojito": "مشروبات منعشة للمشاركة.", Milkshake: "كريمية ولذيذة وباردة.", Smoothie: "فواكه طازجة ممزوجة بنعومة.", "Iced Tea": "شاي بارد ومنعش.", Juice: "عصائر طبيعية ومشرقة.", Crepe: "حلويات مقهى محضرة حسب الطلب.", "Mini Pancake": "لقيمات صغيرة بطعم كبير.", Waffle: "ذهبية ومقرمشة ومناسبة للمشاركة.", Kunafa: "نهاية حلوة بلمسة محلية.", "Thai Doodorma": "أطباق شهية ومريحة.",
     };
     const categoryBadiniNames = { "Hot Coffee": "قەھوەیا گەرم", "Iced Coffee": "قەھوەیا سار", "Red Bull": "ڕێد بوڵ", "Bris Mojito": "بریس مۆجیتۆ", Milkshake: "میلک شەیک", Smoothie: "سمووتی", "Iced Tea": "چا یا سار", Juice: "شەربەت", Crepe: "کرێپ", "Mini Pancake": "پانکەیکی بچووک", Waffle: "وافل", Kunafa: "کونەفە", "Thai Doodorma": "تای دودورما" };
-    const categoryBadiniDescriptions = { "Hot Coffee": "ڤەخوارنێن گەرم و ب بالدارî هاتینە ئامادەکرن.", "Iced Coffee": "قەھوەیا سار و تازە.", "Red Bull": "ئەنەرژیەکا تازە ژ بۆ روژا تە.", "Iced Tea": "چا یا سار و تازە.", Juice: "شەربەتێن سروشتی و تازە.", Kunafa: "دەمەکا شیرین ب شێوازەکا هەرێمی.", "Thai Doodorma": "خوارنێن خوش و دلخواز." };
+    const categoryBadiniDescriptions = { "Hot Coffee": "ڤەخوارنێن گەرم و ب بالدارî هاتینە ئامادەکرن.", "Iced Coffee": "قەھوەیا سار و تازە.", "Red Bull": "ئەنەرژیەکا تازە ژ بۆ روژا تە.", Milkshake: "شیرین و کریمی، ب تامەکێ خۆش.", Smoothie: "فاکێنێن تازە، هاتینە تێکدان.", "Iced Tea": "چا یا سار و تازە.", Juice: "شەربەتێن سروشتی و تازە.", Kunafa: "دەمەکا شیرین ب شێوازەکا هەرێمی.", "Thai Doodorma": "خوارنێن خوش و دلخواز." };
     const defaultCategories = Object.keys(categoryDetails);
     const categoryMigration = item => {
       if (item.category === "Coffee") return "Hot Coffee";
@@ -573,6 +574,11 @@
     if (hashCategory) activeCategory = hashCategory;
 
     function localized(value, arabicValue = "", badiniValue = "") { if (currentLanguage === "ar" && arabicValue?.trim()) return arabicValue; if (currentLanguage === "ku" && badiniValue?.trim()) return badiniValue; return value; }
+    function localizedDescription(value, arabicValue = "", badiniValue = "") {
+      if (currentLanguage === "ku") return badiniValue?.trim() || "";
+      if (currentLanguage === "ar" && arabicValue?.trim()) return arabicValue;
+      return value || "";
+    }
     function categoryLabel(category) { if (currentLanguage === "ar") return categoryDetails[category]?.[2] || categoryArabicNames[category] || category; if (currentLanguage === "ku") return categoryDetails[category]?.[4] || categoryBadiniNames[category] || category; return category; }
     function categoryDescription(category) { return localized(categoryDetails[category]?.[1] || "Fresh from the cafe.", categoryDetails[category]?.[3] || categoryArabicDescriptions[category] || "", categoryDetails[category]?.[5] || categoryBadiniDescriptions[category] || ""); }
     function addAdminLoginBrand() {
@@ -710,9 +716,9 @@
 
     function cardTemplate(item, index) {
       const name = localized(item.name, item.nameAr, item.nameKu);
-      const description = localized(item.description || "", item.descriptionAr, item.descriptionKu).trim();
+      const description = localizedDescription(item.description, item.descriptionAr, item.descriptionKu).trim();
       const descriptionMarkup = description ? `<p>${escapeAttribute(description)}</p>` : "";
-      return `<div class="col-6 col-sm-6 col-lg-4 reveal" style="transition-delay:${Math.min(index * 45, 180)}ms"><article class="menu-card" tabindex="0" role="button" data-item="${escapeAttribute(item.name)}"><div class="card-image"><img loading="lazy" decoding="async" src="${item.image}" ${responsiveImageSources(item.image)} alt="${escapeAttribute(name)}"></div><div class="card-body${description ? "" : " no-description"}"><div class="card-meta"><h3>${escapeAttribute(name)}</h3><span class="price">${item.price}</span></div>${descriptionMarkup}${item.badge ? `<span class="badge-soft">${escapeAttribute(item.badge)}</span>` : ""}</div></article></div>`;
+      return `<div class="col-6 col-sm-6 col-lg-4 reveal" style="transition-delay:${Math.min(index * 45, 180)}ms"><article class="menu-card" tabindex="0" role="button" data-item="${escapeAttribute(item.name)}"><div class="card-image"><img loading="lazy" decoding="async" src="${escapeAttribute(item.image)}" ${responsiveImageSources(item.image)} alt="${escapeAttribute(name)}"></div><div class="card-body${description ? "" : " no-description"}"><div class="card-meta"><h3>${escapeAttribute(name)}</h3><span class="price">${escapeAttribute(item.price)}</span></div>${descriptionMarkup}${item.badge ? `<span class="badge-soft">${escapeAttribute(item.badge)}</span>` : ""}</div></article></div>`;
     }
 
     function responsiveImageSources(image) {
@@ -748,7 +754,7 @@
       document.getElementById("modalTitle").textContent = displayName;
       document.getElementById("modalCategory").textContent = categoryLabel(item.category);
       document.getElementById("modalPrice").textContent = item.price;
-      document.getElementById("modalDescription").textContent = localized(item.description, item.descriptionAr, item.descriptionKu);
+      document.getElementById("modalDescription").textContent = localizedDescription(item.description, item.descriptionAr, item.descriptionKu);
       modal.show();
     }
 
@@ -932,7 +938,7 @@
       const visibleItems = menuItems.map((item, index) => ({ item, index })).filter(({ item }) => !normalizedQuery || `${item.name} ${item.category}`.toLowerCase().includes(normalizedQuery));
       const listCount = document.getElementById("adminListCount");
       if (listCount) listCount.textContent = `${visibleItems.length} of ${menuItems.length} items`;
-      adminList.innerHTML = visibleItems.length ? visibleItems.map(({ item, index }) => { const numericPrice = item.price.replace(/[^0-9]/g, ""); return `<div class="admin-item"><img src="${item.image}" alt=""><div class="admin-item-info"><strong>${escapeAttribute(item.name)}</strong><span>${escapeAttribute(item.category)}</span><div class="admin-price-row"><input class="admin-price-input" data-price-index="${index}" value="${numericPrice}" inputmode="numeric" aria-label="Price for ${escapeAttribute(item.name)}"><button class="admin-save-price" type="button" data-save-price="${index}">Save IQD</button></div><div class="admin-photo-row"><input class="admin-photo-input" data-photo-index="${index}" type="file" accept="image/*" aria-label="Choose photo for ${escapeAttribute(item.name)}"><button class="admin-save-price" type="button" data-save-photo="${index}">Save photo</button></div></div><button class="admin-delete" type="button" data-delete-index="${index}" aria-label="Delete ${escapeAttribute(item.name)}"><i class="fa-solid fa-trash" aria-hidden="true"></i></button></div>`; }).join("") : `<div class="admin-list-empty"><i class="fa-solid fa-magnifying-glass mb-2" aria-hidden="true"></i><br>No matching items.</div>`;
+      adminList.innerHTML = visibleItems.length ? visibleItems.map(({ item, index }) => { const numericPrice = item.price.replace(/[^0-9]/g, ""); return `<div class="admin-item"><img src="${escapeAttribute(item.image)}" alt=""><div class="admin-item-info"><strong>${escapeAttribute(item.name)}</strong><span>${escapeAttribute(item.category)}</span><div class="admin-price-row"><input class="admin-price-input" data-price-index="${index}" value="${numericPrice}" inputmode="numeric" aria-label="Price for ${escapeAttribute(item.name)}"><button class="admin-save-price" type="button" data-save-price="${index}">Save IQD</button></div><div class="admin-photo-row"><input class="admin-photo-input" data-photo-index="${index}" type="file" accept="image/*" aria-label="Choose photo for ${escapeAttribute(item.name)}"><button class="admin-save-price" type="button" data-save-photo="${index}">Save photo</button></div></div><button class="admin-delete" type="button" data-delete-index="${index}" aria-label="Delete ${escapeAttribute(item.name)}"><i class="fa-solid fa-trash" aria-hidden="true"></i></button></div>`; }).join("") : `<div class="admin-list-empty"><i class="fa-solid fa-magnifying-glass mb-2" aria-hidden="true"></i><br>No matching items.</div>`;
       updateAdminSummary();
     }
     function showAdmin() {
@@ -1007,7 +1013,8 @@
           const snapshot = await Promise.race([upload, timeout]);
           return await snapshot.ref.getDownloadURL();
         } catch (error) {
-          console.warn("Firebase Storage upload failed; using compressed online database image fallback.", error);
+          console.warn("Firebase Storage upload failed.", error);
+          throw new Error("Photo upload failed. Check your connection and Firebase Storage permissions, then try again.");
         }
       }
       return null;
@@ -1017,7 +1024,9 @@
       if (!file || !firebaseStorage) return imageData;
       const blob = await fetch(imageData).then(response => response.blob());
       const compressedFile = new File([blob], `menu-photo-${Date.now()}.jpg`, { type: blob.type || "image/jpeg" });
-      return await uploadImageToStorage(compressedFile) || imageData;
+      const storageUrl = await uploadImageToStorage(compressedFile);
+      if (firebaseDatabase && !storageUrl) throw new Error("Sign in again before uploading menu photos.");
+      return storageUrl || imageData;
     }
 
     addAdminLanguageFields();
@@ -1062,7 +1071,7 @@
     document.getElementById("adminLogout").addEventListener("click", clearAdminSession);
     window.setInterval(expireAdminSession, 30000);
     document.addEventListener("visibilitychange", expireAdminSession);
-    adminList.addEventListener("click", async event => { const deleteButton = event.target.closest("[data-delete-index]"); if (deleteButton) { menuItems.splice(Number(deleteButton.dataset.deleteIndex), 1); syncCategories(); renderMenu(searchInput.value); refreshAdminList(); try { await persistMenu(); } catch (error) { adminCategoryError.textContent = error.message; } return; } const photoButton = event.target.closest("[data-save-photo]"); if (photoButton) { const index = Number(photoButton.dataset.savePhoto); const photoInput = adminList.querySelector(`[data-photo-index="${index}"]`); const file = photoInput?.files[0]; if (!file) return; photoButton.disabled = true; photoButton.textContent = "Saving..."; try { menuItems[index].image = await dataUrlFromFile(file); await persistMenu(); renderMenu(searchInput.value); refreshAdminList(); } catch (error) { adminCategoryError.textContent = error.message; } finally { photoButton.disabled = false; } return; } const saveButton = event.target.closest("[data-save-price]"); if (!saveButton) return; const index = Number(saveButton.dataset.savePrice); const priceInput = adminList.querySelector(`[data-price-index="${index}"]`); const rawPrice = priceInput.value.replace(/[^0-9]/g, ""); if (!rawPrice) return; menuItems[index].price = `IQD ${Number(rawPrice).toLocaleString("en-US")}`; renderMenu(searchInput.value); refreshAdminList(); try { await persistMenu(); } catch (error) { adminCategoryError.textContent = error.message; } });
+    adminList.addEventListener("click", async event => { const deleteButton = event.target.closest("[data-delete-index]"); if (deleteButton) { menuItems.splice(Number(deleteButton.dataset.deleteIndex), 1); syncCategories(); renderMenu(searchInput.value); refreshAdminList(); try { await persistMenu(); } catch (error) { adminCategoryError.textContent = error.message; } return; } const photoButton = event.target.closest("[data-save-photo]"); if (photoButton) { const index = Number(photoButton.dataset.savePhoto); const photoInput = adminList.querySelector(`[data-photo-index="${index}"]`); const file = photoInput?.files[0]; if (!file) return; photoButton.disabled = true; photoButton.textContent = "Saving..."; try { menuItems[index].image = await menuImageFromFile(file); await persistMenu(); renderMenu(searchInput.value); refreshAdminList(); } catch (error) { adminCategoryError.textContent = error.message; } finally { photoButton.disabled = false; } return; } const saveButton = event.target.closest("[data-save-price]"); if (!saveButton) return; const index = Number(saveButton.dataset.savePrice); const priceInput = adminList.querySelector(`[data-price-index="${index}"]`); const rawPrice = priceInput.value.replace(/[^0-9]/g, ""); if (!rawPrice) return; menuItems[index].price = `IQD ${Number(rawPrice).toLocaleString("en-US")}`; renderMenu(searchInput.value); refreshAdminList(); try { await persistMenu(); } catch (error) { adminCategoryError.textContent = error.message; } });
     languageToggle.addEventListener("click", event => { event.stopPropagation(); const isOpen = languagePicker.classList.toggle("open"); languageToggle.setAttribute("aria-expanded", String(isOpen)); });
     document.querySelectorAll(".language-option").forEach(option => option.addEventListener("click", () => setLanguage(option.dataset.language)));
     document.addEventListener("click", event => { if (!event.target.closest("#languagePicker")) { languagePicker.classList.remove("open"); languageToggle.setAttribute("aria-expanded", "false"); } });
