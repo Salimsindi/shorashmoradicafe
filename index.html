@@ -313,7 +313,7 @@
   <body class="intro-active">
   <div class="scroll-progress" id="scrollProgress" aria-hidden="true"></div>
   <div class="loader" id="loader" aria-label="Loading menu">
-    <video class="loader-video" src="bg vid.MP4" autoplay muted loop playsinline preload="metadata" aria-hidden="true"></video><div class="loader-inner"><img class="loader-logo" src="salim_shoras-removebg-preview.png" alt="Shorash Moradi Cafe logo"><img class="loader-arabic-logo" src="Shorash 1.png" alt="Shorash Moradi Arabic logo"><div class="intro-languages" aria-label="Choose language"><button class="intro-language" type="button" data-intro-language="en">English</button><button class="intro-language" type="button" data-intro-language="ar">العربية</button><button class="intro-language" type="button" data-intro-language="ku">Badînî</button></div><button class="intro-open" id="introOpen" type="button">Open Menu</button><audio id="introAudio" src="Intro shorash.mp3" preload="none"></audio></div>
+    <video class="loader-video" src="bg vid.MP4" autoplay muted loop playsinline preload="metadata" aria-hidden="true"></video><div class="loader-inner"><img class="loader-logo" src="salim_shoras-removebg-preview.png" alt="Shorash Moradi Cafe logo"><img class="loader-arabic-logo" src="Shorash 1.png" alt="Shorash Moradi Arabic logo"><div class="intro-languages" aria-label="Choose language"><button class="intro-language" type="button" data-intro-language="en">English</button><button class="intro-language" type="button" data-intro-language="ar">العربية</button><button class="intro-language" type="button" data-intro-language="ku">Badînî</button></div><button class="intro-open" id="introOpen" type="button">Open Menu</button><audio id="introAudio" src="Intro shorash.mp3" preload="auto" autoplay></audio></div>
   </div>
   <header class="site-header">
     <div class="container nav-wrap">
@@ -1182,8 +1182,28 @@
     updateScrollEffects();
     backTop.addEventListener("click", () => window.scrollTo({ top: 0, behavior: "smooth" }));
     const introOpen = document.getElementById("introOpen");
-    introOpen.addEventListener("click", () => {
+    const introAudio = document.getElementById("introAudio");
+    function playIntroAudio() {
+      if (!introAudio.paused) return;
+      introAudio.play().then(() => { delete introAudio.dataset.autoplayBlocked; }).catch(() => { introAudio.dataset.autoplayBlocked = "true"; });
+    }
+    playIntroAudio();
+    document.querySelectorAll("[data-intro-language]").forEach(button => {
+      button.addEventListener("click", playIntroAudio, { once: true });
+      button.addEventListener("keydown", playIntroAudio, { once: true });
+    });
+    introOpen.addEventListener("click", async () => {
+      introAudio.pause();
       introOpen.disabled = true;
+      document.querySelectorAll("[data-intro-language]").forEach(button => { button.disabled = true; });
+      introOpen.textContent = currentLanguage === "ar" ? "جار تحميل القائمة..." : currentLanguage === "ku" ? "مینیو دهێتە بارکرن..." : "Loading menu...";
+      await menuDataReadyPromise;
+      activeCategory = "All";
+      searchInput.value = "";
+      clearSearch.classList.remove("visible");
+      renderCategories();
+      renderMenu();
+      history.replaceState(null, "", "#all");
       document.body.classList.remove("intro-active");
       document.body.classList.add("menu-opening");
       const loader = document.getElementById("loader");
