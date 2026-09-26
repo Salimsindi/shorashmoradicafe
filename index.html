@@ -1069,22 +1069,7 @@
       if (firebaseStorage) {
         try {
           const safeName = `${Date.now()}-${file.name}`.replace(/[^a-zA-Z0-9._-]/g, "-");
-          const uploadTask = firebaseStorage.ref(`menu-images/${safeName}`).put(file);
-          const snapshot = await new Promise((resolve, reject) => {
-            const timeoutId = window.setTimeout(() => {
-              uploadTask.cancel();
-              const timeoutError = new Error("Photo upload timed out.");
-              timeoutError.code = "storage/retry-limit-exceeded";
-              reject(timeoutError);
-            }, 20000);
-            uploadTask.then(result => {
-              window.clearTimeout(timeoutId);
-              resolve(result);
-            }, error => {
-              window.clearTimeout(timeoutId);
-              reject(error);
-            });
-          });
+          const snapshot = await firebaseStorage.ref(`menu-images/${safeName}`).put(file);
           return await snapshot.ref.getDownloadURL();
         } catch (error) {
           console.warn("Firebase Storage upload failed.", error);
@@ -1101,7 +1086,11 @@
       let imageData = defaultMenuImage;
       try {
         imageData = await dataUrlFromFile(file);
-        if (!firebaseStorage) return { image: imageData, warning: "" };
+        if (!firebaseStorage) {
+          return firebaseDatabase
+            ? { image: null, warning: "Item saved, but Firebase Storage is unavailable, so the photo was not uploaded." }
+            : { image: imageData, warning: "" };
+        }
         const blob = await fetch(imageData).then(response => response.blob());
         const compressedFile = new File([blob], `menu-photo-${Date.now()}.jpg`, { type: blob.type || "image/jpeg" });
         const storageUrl = await uploadImageToStorage(compressedFile);
@@ -1109,8 +1098,58 @@
         return { image: storageUrl || imageData, warning: "" };
       } catch (error) {
         if (!firebaseAuth?.currentUser || !isAdminSessionValid()) throw error;
-        console.warn("Using the compressed photo in the menu data because Firebase Storage is unavailable.", error);
-        return { image: imageData, warning: `Photo storage failed (${error?.message || "unknown error"}); the compressed photo was saved with the menu.` };
+        console.warn("Could not upload the menu photo to Firebase Storage.", error);
+        return { image: null, warning: `Photo upload failed: ${error?.message || "check your Firebase Storage permissions and connection."}` };
+      }
+    }
+
+    async function updateMenuItemImageSafely(itemId, image) {
+      if (!firebaseDatabase) {
+        const localItem = menuItems.find(item => item.id === itemId);
+        if (!localItem) throw new Error("The menu item could not be found.");
+        localItem.image = image;
+        await persistMenu();
+        renderMenu(searchInput.value);
+        refreshAdminList();
+        return;
+      }
+      pendingMenuWrite = { updatingItemImage: itemId };
+      try {
+        const result = await firebaseDatabase.ref("menu").transaction(current => {
+          if (!current?.items || typeof current.items !== "object") return;
+          let found = false;
+          const updateItem = item => {
+            if (!item || item.id !== itemId) return item;
+            found = true;
+            return { ...item, image };
+          };
+          const items = Array.isArray(current.items)
+            ? current.items.map(updateItem)
+            : Object.fromEntries(Object.entries(current.items).map(([key, item]) => [key, updateItem(item)]));
+          if (!found) return;
+          return { ...current, items };
+        }, undefined, false);
+        if (!result.committed) throw new Error("The item saved, but Firebase could not attach the uploaded photo.");
+        const savedMenu = result.snapshot.val();
+        pendingMenuWrite = null;
+        applyLiveMenu(savedMenu.items, savedMenu.customCategories || {});
+        menuChannel?.postMessage({ type: "menu-update", items: menuItems, customCategories: savedMenu.customCategories || {} });
+      } finally {
+        pendingMenuWrite = null;
+      }
+    }
+
+    async function uploadNewMenuItemPhoto(itemId, file) {
+      try {
+        const result = await menuImageFromFile(file);
+        if (!result.image || result.image.startsWith("data:image/")) {
+          adminItemError.textContent = result.warning || "Item saved, but its photo could not be uploaded.";
+          return;
+        }
+        await updateMenuItemImageSafely(itemId, result.image);
+        adminItemError.textContent = "Item and photo saved successfully.";
+      } catch (error) {
+        adminItemError.textContent = `Item saved, but its photo could not be uploaded: ${error.message || "check Firebase Storage and try again."}`;
       }
     }
 
@@ -1142,20 +1181,6 @@
     updateIntroLanguageState();
 
     if (location.hash === "#admin") showAdmin();
-    document.getElementById("itemForm").addEventListener("submit", event => {
-      if (menuDataReady) return;
-      event.preventDefault();
-      event.stopImmediatePropagation();
-      const form = event.currentTarget;
-      const submitButton = event.submitter || form.querySelector('button[type="submit"]');
-      if (submitButton) submitButton.disabled = true;
-      adminItemError.textContent = "Loading the current menu...";
-      menuDataReadyPromise.then(() => {
-        if (submitButton) submitButton.disabled = false;
-        adminItemError.textContent = "";
-        form.requestSubmit(submitButton || undefined);
-      });
-    }, true);
     document.addEventListener("click", event => { if (event.target.closest("a[href=\"#admin\"]")) { event.preventDefault(); showAdmin(); } });
     document.getElementById("adminClose").addEventListener("click", hideAdmin);
     document.getElementById("adminLoginForm").addEventListener("submit", async event => { event.preventDefault(); const username = document.getElementById("adminUsername").value.trim().toLowerCase(); const password = document.getElementById("adminPassword").value; const error = document.getElementById("adminLoginError"); if (!firebaseAuth) { error.textContent = "Firebase authentication is unavailable."; return; } try { const credential = await firebaseAuth.signInWithEmailAndPassword(username, password); if (credential.user.email.toLowerCase() !== ADMIN_USERNAME || credential.user.uid !== ADMIN_UID) throw new Error("unauthorized-admin"); sessionStorage.setItem(ADMIN_SESSION_KEY, JSON.stringify({ username: credential.user.email.toLowerCase(), uid: credential.user.uid, expiresAt: Date.now() + ADMIN_SESSION_LENGTH })); error.textContent = ""; adminLoginPanel.hidden = true; adminDashboard.hidden = false; refreshAdminList(); } catch (loginError) { error.textContent = loginError.message === "unauthorized-admin" ? "This account is not an authorized admin." : "Incorrect admin email or password."; document.getElementById("adminPassword").value = ""; } });
@@ -1174,13 +1199,14 @@
       const category = adminItemCategory.value;
       const imageFile = document.getElementById("adminItemImage").files[0];
       const rawPrice = document.getElementById("adminItemPrice").value.replace(/[^0-9]/g, "");
+      const itemId = `menu-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
       let newItem = null;
       submitButton.disabled = true;
       submitButton.innerHTML = '<i class="fa-solid fa-spinner fa-spin" aria-hidden="true"></i> Saving...';
       adminItemError.textContent = "";
       try {
-        const photoResult = await menuImageFromFile(imageFile);
         newItem = {
+          id: itemId,
           name: document.getElementById("adminItemName").value.trim(),
           nameAr: document.getElementById("adminItemNameAr").value.trim(),
           nameKu: document.getElementById("adminItemNameKu").value.trim(),
@@ -1190,7 +1216,7 @@
           descriptionAr: "",
           descriptionKu: "",
           badge: "FRESH. BOLD",
-          image: photoResult.image
+          image: defaultMenuImage
         };
         menuItems.push(newItem);
         activeCategory = category;
@@ -1201,7 +1227,8 @@
         refreshAdminList();
         await appendMenuItemSafely(newItem);
         event.target.reset();
-        adminItemError.textContent = photoResult.warning || "Item added to the menu.";
+        adminItemError.textContent = imageFile ? "Item saved. Uploading photo..." : "Item added to the menu.";
+        if (imageFile) void uploadNewMenuItemPhoto(itemId, imageFile);
       } catch (error) {
         if (newItem) {
           const itemIndex = menuItems.indexOf(newItem);

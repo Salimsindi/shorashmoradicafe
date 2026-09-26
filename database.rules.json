@@ -5,7 +5,7 @@
     "menu": {
       ".read": true,
       ".write": "auth != null && auth.uid === '6UcQq6dBIaQXUnyAqo90EO92V6R2'",
-      ".validate": "newData.hasChildren(['items', 'customCategories'])"
+      ".validate": "newData.hasChildren(['items'])"
     }
   }
 }
