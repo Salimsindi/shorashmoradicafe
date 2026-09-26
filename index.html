@@ -834,21 +834,27 @@
     }
     async function persistMenu() {
       if (firebaseDatabase && (!firebaseAuth?.currentUser || !isAdminSessionValid())) throw new Error("Admin authentication is required to save menu changes.");
-      try { localStorage.setItem("shorash-menu-items", JSON.stringify(makeFastMenuCache(menuItems))); } catch (error) { console.warn("Local menu cache is unavailable; Firebase remains the source of truth.", error); }
       const customCategories = Object.fromEntries(Object.entries(categoryDetails).filter(([name]) => !defaultCategories.includes(name)));
-      try { localStorage.setItem("shorash-menu-categories", JSON.stringify(customCategories)); } catch (error) { console.warn("Local category cache is unavailable.", error); }
       const payload = { items: menuItems.map(item => ({ ...item })), customCategories };
-      pendingMenuWrite = payload;
-      menuChannel?.postMessage({ type: "menu-update", ...payload });
       if (!firebaseDatabase) {
+        try { localStorage.setItem("shorash-menu-items", JSON.stringify(makeFastMenuCache(menuItems))); } catch (error) { console.warn("Local menu cache is unavailable.", error); }
+        try { localStorage.setItem("shorash-menu-categories", JSON.stringify(customCategories)); } catch (error) { console.warn("Local category cache is unavailable.", error); }
         pendingMenuWrite = null;
-        throw new Error("Firebase is unavailable. Changes were saved only in this browser.");
+        menuChannel?.postMessage({ type: "menu-update", ...payload });
+        return;
       }
+      pendingMenuWrite = payload;
       menuWriteQueue = menuWriteQueue.catch(() => {}).then(() => firebaseDatabase.ref("menu").set(payload)).catch(error => {
         console.warn("Firebase menu sync failed.", error);
-        throw new Error("Could not save this change online. Check Firebase Database permissions and try again.");
+        const reason = error?.code === "PERMISSION_DENIED"
+          ? "Firebase denied the write. Check the signed-in admin account and deployed database rules."
+          : "Check your connection and Firebase Database permissions, then try again.";
+        throw new Error(`Could not save this change online. ${reason}`);
       }).finally(() => { pendingMenuWrite = null; });
-      return await menuWriteQueue;
+      await menuWriteQueue;
+      try { localStorage.setItem("shorash-menu-items", JSON.stringify(makeFastMenuCache(menuItems))); } catch (error) { console.warn("Local menu cache is unavailable; Firebase remains the source of truth.", error); }
+      try { localStorage.setItem("shorash-menu-categories", JSON.stringify(customCategories)); } catch (error) { console.warn("Local category cache is unavailable.", error); }
+      menuChannel?.postMessage({ type: "menu-update", ...payload });
     }
     function updateAdminSummary() {
       const itemCount = document.getElementById("adminItemCount");
@@ -1086,6 +1092,7 @@
       const category = adminItemCategory.value;
       const imageFile = document.getElementById("adminItemImage").files[0];
       const rawPrice = document.getElementById("adminItemPrice").value.replace(/[^0-9]/g, "");
+      let itemAdded = false;
       submitButton.disabled = true;
       submitButton.innerHTML = '<i class="fa-solid fa-spinner fa-spin" aria-hidden="true"></i> Adding...';
       adminCategoryError.textContent = "";
@@ -1097,13 +1104,16 @@
           nameKu: document.getElementById("adminItemNameKu").value.trim(),
           category,
           price: `IQD ${Number(rawPrice || 0).toLocaleString("en-US")}`,
-          description: "",
+          description: document.getElementById("adminItemDescription").value.trim(),
           descriptionAr: "",
           descriptionKu: "",
           badge: "FRESH. BOLD",
           image
         };
         menuItems.push(newItem);
+        itemAdded = true;
+        await persistMenu();
+        itemAdded = false;
         activeCategory = category;
         searchInput.value = "";
         clearSearch.classList.remove("visible");
@@ -1111,8 +1121,13 @@
         renderMenu();
         refreshAdminList();
         event.target.reset();
-        await persistMenu();
       } catch (error) {
+        if (itemAdded) {
+          menuItems.pop();
+          syncCategories();
+          renderMenu(searchInput.value);
+          refreshAdminList();
+        }
         adminCategoryError.textContent = error.message || "Could not add this item.";
       } finally {
         submitButton.disabled = false;
