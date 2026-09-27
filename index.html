@@ -531,6 +531,19 @@
       const category = typeof item?.category === "string" ? item.category : "uncategorized";
       return `menu-${slugify(name)}-${slugify(category)}-${fallbackIndex}`;
     }
+    function normalizeMenuImage(value) {
+      if (typeof value !== "string" || !value.trim()) return defaultMenuImage;
+      const image = value.trim();
+      if (/^(data:image\/|https?:\/\/|\/|\.\/|\.\.\/)/i.test(image)) return image;
+      if (/^[A-Za-z0-9+/_-]+={0,2}$/.test(image) && image.length > 128) {
+        const mime = image.startsWith("iVBORw0KGgo") ? "image/png"
+          : image.startsWith("R0lGOD") ? "image/gif"
+            : image.startsWith("UklGR") ? "image/webp"
+              : "image/jpeg";
+        return `data:${mime};base64,${image}`;
+      }
+      return image;
+    }
     function normalizeMenuItems(value) {
       const entries = Array.isArray(value)
         ? value.map((item, index) => [String(index), item])
@@ -548,7 +561,7 @@
         descriptionKu: typeof item.descriptionKu === "string" ? item.descriptionKu : "",
         nameAr: typeof item.nameAr === "string" ? item.nameAr : "",
         nameKu: typeof item.nameKu === "string" ? item.nameKu : "",
-        image: typeof item.image === "string" && item.image ? item.image : defaultMenuImage,
+        image: normalizeMenuImage(item.image),
         badge: typeof item.badge === "string" ? item.badge : ""
       }));
     }
