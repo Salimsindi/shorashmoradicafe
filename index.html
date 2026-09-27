@@ -1042,6 +1042,17 @@
         toolbar.innerHTML = `<input class="admin-list-search" id="adminListSearch" type="search" placeholder="Search items..." aria-label="Search menu items"><span class="admin-list-count" id="adminListCount"></span>`;
         adminList.before(toolbar);
         toolbar.querySelector("input").addEventListener("input", event => refreshAdminList(event.target.value));
+        const repairButton = document.createElement("button");
+        repairButton.className = "admin-secondary";
+        repairButton.id = "restoreOnlineImages";
+        repairButton.type = "button";
+        repairButton.textContent = "Restore online images";
+        const repairStatus = document.createElement("span");
+        repairStatus.className = "admin-list-count";
+        repairStatus.id = "restoreOnlineImagesStatus";
+        repairStatus.setAttribute("aria-live", "polite");
+        toolbar.append(repairButton, repairStatus);
+        repairButton.addEventListener("click", () => restoreOnlineMenuImages(repairButton, repairStatus));
       }
       updateAdminSummary();
     }
@@ -1196,6 +1207,66 @@
       const item = menuItems[index];
       if (!item) throw new Error("The menu item could not be found.");
       await updateMenuItemImageSafely(item.id || null, image, index);
+    }
+
+    async function restoreOnlineMenuImages(button, status) {
+      const itemsToRestore = menuItems.map((item, index) => ({ item, index }))
+        .filter(({ item }) => item.image?.startsWith("data:image/") && item.image !== cachedImagePlaceholder);
+      if (!itemsToRestore.length) {
+        status.textContent = "No Base64 images need restoring.";
+        return;
+      }
+      if (!firebaseDatabase || !firebaseStorage) {
+        status.textContent = "Firebase Database and Storage must be available.";
+        return;
+      }
+      if (firebaseAuth?.currentUser?.uid !== ADMIN_UID || !isAdminSessionValid()) {
+        status.textContent = "Sign in with the admin account to restore online images.";
+        return;
+      }
+      if (!window.confirm(`Upload ${itemsToRestore.length} images to Firebase Storage for online visitors? This updates image fields only.`)) return;
+
+      button.disabled = true;
+      let uploaded = 0;
+      pendingMenuWrite = { restoringImages: true };
+      try {
+        const snapshot = await firebaseDatabase.ref("menu/items").once("value");
+        const remoteItems = snapshot.val() || {};
+        for (const { item, index } of itemsToRestore) {
+          status.textContent = `Uploading ${uploaded + 1} of ${itemsToRestore.length}: ${item.name}`;
+          const response = await fetch(item.image);
+          if (!response.ok) throw new Error(`Could not read the saved image for ${item.name}.`);
+          const blob = await response.blob();
+          if (!blob.type.startsWith("image/")) throw new Error(`The saved image for ${item.name} is invalid.`);
+
+          let itemKey = menuItemDatabaseKeys[index];
+          if (!itemKey || remoteItems[itemKey]?.name !== item.name) {
+            const matches = Object.entries(remoteItems).filter(([, remoteItem]) => remoteItem?.name === item.name);
+            if (matches.length !== 1) throw new Error(`Could not uniquely match ${item.name} to its online menu item.`);
+            itemKey = matches[0][0];
+          }
+
+          const extension = (blob.type.split("/")[1] || "jpeg").replace(/[^a-z0-9]/gi, "") || "jpeg";
+          const storageRef = firebaseStorage.ref(`menu-images/restored-${String(itemKey).replace(/[^a-zA-Z0-9_-]/g, "-")}.${extension}`);
+          await storageRef.put(blob, { contentType: blob.type });
+          const imageUrl = await storageRef.getDownloadURL();
+          await firebaseDatabase.ref("menu/items").child(itemKey).child("image").set(imageUrl);
+          item.image = imageUrl;
+          uploaded += 1;
+        }
+
+        try { localStorage.setItem("shorash-menu-items", JSON.stringify(menuItems)); } catch (error) { console.warn("Could not cache the restored menu images locally.", error); }
+        const customCategories = Object.fromEntries(Object.entries(categoryDetails).filter(([name]) => !defaultCategories.includes(name)));
+        menuChannel?.postMessage({ type: "menu-update", items: menuItems, customCategories });
+        renderMenu(searchInput.value);
+        refreshAdminList(document.getElementById("adminListSearch")?.value || "");
+        status.textContent = `Restored ${uploaded} images for online visitors.`;
+      } catch (error) {
+        status.textContent = `Stopped after ${uploaded} of ${itemsToRestore.length}: ${error.message || "check Firebase permissions and try again."}`;
+      } finally {
+        pendingMenuWrite = null;
+        button.disabled = false;
+      }
     }
 
     async function uploadNewMenuItemPhoto(itemId, file) {
