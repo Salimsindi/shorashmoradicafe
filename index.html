@@ -523,6 +523,7 @@
     let allCategories = ["All", ...categories];
     const cachedImagePlaceholder = "data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=";
     const defaultMenuImage = "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&w=900&q=80";
+    const MAX_MENU_IMAGE_DATA_URL_LENGTH = 1024 * 1024;
     let menuItemDatabaseKeys = [];
     function normalizeMenuItems(value) {
       const entries = Array.isArray(value)
@@ -908,6 +909,44 @@
         throw error;
       }
     }
+    async function deleteMenuItemSafely(index) {
+      const item = menuItems[index];
+      if (!item) throw new Error("The menu item could not be found.");
+      if (!firebaseDatabase) {
+        menuItems.splice(index, 1);
+        menuItemDatabaseKeys.splice(index, 1);
+        syncCategories();
+        renderMenu(searchInput.value);
+        refreshAdminList(document.getElementById("adminListSearch")?.value || "");
+        await persistMenu();
+        return;
+      }
+      if (!firebaseAuth?.currentUser || !isAdminSessionValid()) throw new Error("Admin authentication is required to delete menu items.");
+      const itemKey = menuItemDatabaseKeys[index];
+      if (itemKey === undefined) throw new Error("Could not locate this item in Firebase. Refresh the menu and try again.");
+      pendingMenuWrite = { deletingItem: itemKey };
+      try {
+        if (menuItemDatabaseKeys.length === 1) {
+          await firebaseDatabase.ref("menu/items").set({ __empty: true });
+        } else {
+          await firebaseDatabase.ref(`menu/items/${itemKey}`).remove();
+        }
+        menuItems.splice(index, 1);
+        menuItemDatabaseKeys.splice(index, 1);
+        pendingMenuWrite = null;
+        syncCategories();
+        renderMenu(searchInput.value);
+        refreshAdminList(document.getElementById("adminListSearch")?.value || "");
+        const customCategories = Object.fromEntries(Object.entries(categoryDetails).filter(([name]) => !defaultCategories.includes(name)));
+        try { localStorage.setItem("shorash-menu-items", JSON.stringify(makeFastMenuCache(menuItems))); } catch (error) { console.warn("Could not cache the updated menu locally.", error); }
+        menuChannel?.postMessage({ type: "menu-update", items: menuItems, customCategories });
+      } catch (error) {
+        if (error?.code === "PERMISSION_DENIED") throw new Error("Firebase denied the delete. Check the signed-in admin account and deployed database rules.");
+        throw new Error(`Could not delete this item online. ${error?.message || "Check your connection and try again."}`);
+      } finally {
+        pendingMenuWrite = null;
+      }
+    }
     function updateAdminSummary() {
       const itemCount = document.getElementById("adminItemCount");
       const categoryCount = document.getElementById("adminCategoryCount");
@@ -1014,8 +1053,25 @@
             const canvas = document.createElement("canvas");
             canvas.width = Math.max(1, Math.round(image.width * scale));
             canvas.height = Math.max(1, Math.round(image.height * scale));
-            canvas.getContext("2d").drawImage(image, 0, 0, canvas.width, canvas.height);
-            resolve(canvas.toDataURL("image/jpeg", .72));
+            const context = canvas.getContext("2d");
+            let quality = .72;
+            for (let attempt = 0; attempt < 12; attempt += 1) {
+              context.clearRect(0, 0, canvas.width, canvas.height);
+              context.drawImage(image, 0, 0, canvas.width, canvas.height);
+              const imageData = canvas.toDataURL("image/jpeg", quality);
+              if (imageData.length <= MAX_MENU_IMAGE_DATA_URL_LENGTH) {
+                resolve(imageData);
+                return;
+              }
+              if (quality > .36) {
+                quality = Math.max(.36, quality - .12);
+              } else {
+                canvas.width = Math.max(1, Math.round(canvas.width * .8));
+                canvas.height = Math.max(1, Math.round(canvas.height * .8));
+                quality = .6;
+              }
+            }
+            reject(new Error("The photo could not be compressed below the 1 MB limit. Choose a smaller image."));
           };
           image.src = reader.result;
         };
@@ -1122,11 +1178,15 @@
     adminList.addEventListener("click", async event => {
       const deleteButton = event.target.closest("[data-delete-index]");
       if (deleteButton) {
-        menuItems.splice(Number(deleteButton.dataset.deleteIndex), 1);
-        syncCategories();
-        renderMenu(searchInput.value);
-        refreshAdminList();
-        try { await persistMenu(); } catch (error) { adminCategoryError.textContent = error.message; }
+        deleteButton.disabled = true;
+        adminCategoryError.textContent = "";
+        try {
+          await deleteMenuItemSafely(Number(deleteButton.dataset.deleteIndex));
+          adminCategoryError.textContent = "Menu item deleted.";
+        } catch (error) {
+          deleteButton.disabled = false;
+          adminCategoryError.textContent = error.message || "Could not delete this item.";
+        }
         return;
       }
 
