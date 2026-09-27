@@ -525,14 +525,21 @@
     const defaultMenuImage = "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&w=900&q=80";
     const MAX_MENU_IMAGE_DATA_URL_LENGTH = 1024 * 1024;
     let menuItemDatabaseKeys = [];
+    function getMenuItemId(item, fallbackIndex = 0) {
+      if (typeof item?.id === "string" && item.id.trim()) return item.id;
+      const name = typeof item?.name === "string" ? item.name : "menu-item";
+      const category = typeof item?.category === "string" ? item.category : "uncategorized";
+      return `menu-${slugify(name)}-${slugify(category)}-${fallbackIndex}`;
+    }
     function normalizeMenuItems(value) {
       const entries = Array.isArray(value)
         ? value.map((item, index) => [String(index), item])
         : value && typeof value === "object" ? Object.entries(value) : [];
       const validEntries = entries.filter(([, item]) => item && typeof item === "object" && !Array.isArray(item));
       menuItemDatabaseKeys = validEntries.map(([key]) => key);
-      return validEntries.map(([, item]) => ({
+      return validEntries.map(([key, item], index) => ({
         ...item,
+        id: getMenuItemId(item, Number.isNaN(Number(key)) ? index : Number(key)),
         name: typeof item.name === "string" ? item.name : "Menu item",
         category: typeof item.category === "string" ? item.category : "Uncategorized",
         price: typeof item.price === "string" || typeof item.price === "number" ? String(item.price) : "",
@@ -554,7 +561,10 @@
         const savedItems = JSON.parse(savedMenu);
         const normalizedItems = normalizeMenuItems(savedItems);
         menuItems.splice(0, menuItems.length, ...normalizedItems);
-      } catch (error) { localStorage.removeItem("shorash-menu-items"); }
+      } catch (error) {
+        console.error("Failed to load saved menu:", error);
+        localStorage.removeItem("shorash-menu-items");
+      }
     }
     menuItems.forEach(item => { item.category = categoryMigration(item); });
     menuItems.forEach(item => {
@@ -863,20 +873,33 @@
     async function persistMenu() {
       const customCategories = Object.fromEntries(Object.entries(categoryDetails).filter(([name]) => !defaultCategories.includes(name)));
       const payload = { items: menuItems.map(item => ({ ...item })), customCategories };
+      
+      // Always save to localStorage first
+      try {
+        localStorage.setItem("shorash-menu-items", JSON.stringify(menuItems));
+      } catch (error) {
+        console.error("Failed to save to localStorage:", error);
+      }
+      try {
+        localStorage.setItem("shorash-menu-categories", JSON.stringify(customCategories));
+      } catch (error) {
+        console.warn("Local category cache is unavailable.", error);
+      }
+      
       if (!firebaseDatabase) {
-        try { localStorage.setItem("shorash-menu-items", JSON.stringify(menuItems)); } catch (error) { console.warn("Local menu cache is unavailable.", error); }
-        try { localStorage.setItem("shorash-menu-categories", JSON.stringify(customCategories)); } catch (error) { console.warn("Local category cache is unavailable.", error); }
         pendingMenuWrite = null;
         menuChannel?.postMessage({ type: "menu-update", ...payload });
         return;
       }
+      
+      // Always try to sync to Firebase if available
       if (!firebaseAuth?.currentUser || !isAdminSessionValid()) {
-        console.warn("Admin authentication is required to save menu changes. Saving locally only.");
-        try { localStorage.setItem("shorash-menu-items", JSON.stringify(menuItems)); } catch (error) { console.warn("Local menu cache is unavailable.", error); }
-        try { localStorage.setItem("shorash-menu-categories", JSON.stringify(customCategories)); } catch (error) { console.warn("Local category cache is unavailable.", error); }
+        console.warn("Not authenticated for Firebase sync, using localStorage only");
+        pendingMenuWrite = null;
         menuChannel?.postMessage({ type: "menu-update", ...payload });
         return;
       }
+      
       pendingMenuWrite = payload;
       menuWriteQueue = menuWriteQueue.catch(() => {}).then(() => firebaseDatabase.ref("menu").set(payload)).catch(error => {
         console.warn("Firebase menu sync failed.", error);
@@ -886,8 +909,6 @@
         throw new Error(`Could not save this change online. ${reason}`);
       }).finally(() => { pendingMenuWrite = null; });
       await menuWriteQueue;
-      try { localStorage.setItem("shorash-menu-items", JSON.stringify(menuItems)); } catch (error) { console.warn("Local menu cache is unavailable; Firebase remains the source of truth.", error); }
-      try { localStorage.setItem("shorash-menu-categories", JSON.stringify(customCategories)); } catch (error) { console.warn("Local category cache is unavailable.", error); }
       menuChannel?.postMessage({ type: "menu-update", ...payload });
     }
     async function appendMenuItemSafely(item) {
@@ -983,6 +1004,23 @@
           renderMenu(searchInput.value);
           refreshAdminList();
           try { await persistMenu(); } catch (error) { adminCategoryError.textContent = error.message; }
+        });
+      }
+      
+      // Add a reset button to clear localStorage for testing
+      if (logoutButton && !document.getElementById("resetLocalStorage")) {
+        const resetButton = document.createElement("button");
+        resetButton.className = "admin-secondary";
+        resetButton.id = "resetLocalStorage";
+        resetButton.type = "button";
+        resetButton.innerHTML = '<i class="fa-solid fa-rotate" aria-hidden="true"></i> Reset storage';
+        logoutButton.before(resetButton);
+        resetButton.addEventListener("click", () => {
+          if (window.confirm("Reset localStorage to default menu? This will clear all your changes.")) {
+            localStorage.removeItem("shorash-menu-items");
+            localStorage.removeItem("shorash-menu-categories");
+            location.reload();
+          }
         });
       }
       if (listPanel && !listPanel.querySelector(".admin-list-toolbar")) {
@@ -1193,9 +1231,10 @@
         const oldPrice = menuItems[index].price;
         menuItems[index].price = `IQD ${Number(rawPrice).toLocaleString("en-US")}`;
         renderMenu(searchInput.value);
+        
         try {
           await persistMenu();
-          adminCategoryError.textContent = "Price updated successfully!";
+          adminCategoryError.textContent = "✓ Price saved successfully!";
           adminCategoryError.style.color = "#79c99a";
           setTimeout(() => {
             adminCategoryError.textContent = "";
@@ -1205,7 +1244,7 @@
           menuItems[index].price = oldPrice;
           renderMenu(searchInput.value);
           priceInput.value = oldPrice.replace(/[^0-9]/g, "");
-          adminCategoryError.textContent = `Failed to save: ${error.message}`;
+          adminCategoryError.textContent = `✗ Failed to save: ${error.message}`;
           adminCategoryError.style.color = "var(--coffee)";
         } finally {
           saveButton.disabled = false;
@@ -1307,25 +1346,51 @@
         submitButton.innerHTML = '<i class="fa-solid fa-plus" aria-hidden="true"></i> Add to menu';
       }
     });
-    function applyLiveMenu(items, customCategories = {}) {
+    function applyLiveMenu(items, customCategories = {}, forceUpdate = false) {
       const safeItems = normalizeMenuItems(items);
       safeItems.forEach(item => { item.category = categoryMigration(item); });
-      menuItems.splice(0, menuItems.length, ...safeItems);
-      try { localStorage.setItem("shorash-menu-items", JSON.stringify(menuItems)); } catch (error) { console.warn("Could not cache the live menu locally.", error); }
+      
+      if (forceUpdate) {
+        menuItems.splice(0, menuItems.length, ...safeItems);
+        try { localStorage.setItem("shorash-menu-items", JSON.stringify(menuItems)); } catch (error) { console.warn("Could not cache the live menu locally.", error); }
+      } else {
+        const mergedItems = [...menuItems];
+        safeItems.forEach(firebaseItem => {
+          const firebaseKey = firebaseItem.id || getMenuItemId(firebaseItem, mergedItems.length);
+          const existingIndex = mergedItems.findIndex(localItem => (localItem.id || getMenuItemId(localItem, mergedItems.length)) === firebaseKey);
+          if (existingIndex !== -1) {
+            mergedItems[existingIndex] = { ...firebaseItem, ...mergedItems[existingIndex] };
+          } else {
+            mergedItems.push(firebaseItem);
+          }
+        });
+        menuItems.splice(0, menuItems.length, ...mergedItems);
+        try { localStorage.setItem("shorash-menu-items", JSON.stringify(menuItems)); } catch (error) { console.warn("Could not cache the live menu locally.", error); }
+      }
+      
       Object.keys(categoryDetails).filter(name => !defaultCategories.includes(name) && !customCategories[name]).forEach(name => delete categoryDetails[name]);
       Object.entries(customCategories).forEach(([name, details]) => { categoryDetails[name] = details; });
       syncCategories();
       renderMenu(searchInput.value);
       if (adminView.classList.contains("visible") && !adminDashboard.hidden) refreshAdminList();
     }
-    menuChannel?.addEventListener("message", event => { if (event.data?.type === "menu-update") applyLiveMenu(event.data.items, event.data.customCategories); });
-    window.addEventListener("storage", event => { if (event.key !== "shorash-menu-items" || !event.newValue) return; try { applyLiveMenu(JSON.parse(event.newValue)); } catch (error) { void error; } });
+    menuChannel?.addEventListener("message", event => { if (event.data?.type === "menu-update") applyLiveMenu(event.data.items, event.data.customCategories, false); });
+    window.addEventListener("storage", event => { if (event.key !== "shorash-menu-items" || !event.newValue) return; try { applyLiveMenu(JSON.parse(event.newValue), {}, false); } catch (error) { void error; } });
     if (firebaseDatabase) {
       firebaseDatabase.ref("menu").on("value", snapshot => {
         const onlineMenu = snapshot.val();
         if (!menuDataReady) { menuDataReady = true; resolveMenuDataReady(); }
         if (!onlineMenu?.items || pendingMenuWrite) return;
-        applyLiveMenu(onlineMenu.items, onlineMenu.customCategories || {});
+        
+        // Check if we have local data
+        const localMenu = localStorage.getItem("shorash-menu-items");
+        if (!localMenu) {
+          // No local data, use Firebase data (force update)
+          applyLiveMenu(onlineMenu.items, onlineMenu.customCategories || {}, true);
+        } else {
+          // We have local data, do smart merge (preserve local changes)
+          applyLiveMenu(onlineMenu.items, onlineMenu.customCategories || {}, false);
+        }
       }, error => { console.warn("Firebase menu listener failed.", error); if (!menuDataReady) { menuDataReady = true; resolveMenuDataReady(); } });
     }
 
