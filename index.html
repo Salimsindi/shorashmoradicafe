@@ -1224,16 +1224,18 @@
         status.textContent = "Sign in with the admin account to restore online images.";
         return;
       }
-      if (!window.confirm(`Upload ${itemsToRestore.length} images to Firebase Storage for online visitors? This updates image fields only.`)) return;
+      if (!window.confirm(`Restore ${itemsToRestore.length} images for online visitors? Firebase Storage will be used when available; otherwise Base64 images will be saved directly. Only image fields are updated.`)) return;
 
       button.disabled = true;
       let uploaded = 0;
+      let savedAsBase64 = 0;
+      let storageAvailable = true;
       pendingMenuWrite = { restoringImages: true };
       try {
         const snapshot = await firebaseDatabase.ref("menu/items").once("value");
         const remoteItems = snapshot.val() || {};
         for (const { item, index } of itemsToRestore) {
-          status.textContent = `Uploading ${uploaded + 1} of ${itemsToRestore.length}: ${item.name}`;
+          status.textContent = `Restoring ${uploaded + 1} of ${itemsToRestore.length}: ${item.name}`;
           const response = await fetch(item.image);
           if (!response.ok) throw new Error(`Could not read the saved image for ${item.name}.`);
           const blob = await response.blob();
@@ -1247,11 +1249,22 @@
           }
 
           const extension = (blob.type.split("/")[1] || "jpeg").replace(/[^a-z0-9]/gi, "") || "jpeg";
-          const storageRef = firebaseStorage.ref(`menu-images/restored-${String(itemKey).replace(/[^a-zA-Z0-9_-]/g, "-")}.${extension}`);
-          await storageRef.put(blob, { contentType: blob.type });
-          const imageUrl = await storageRef.getDownloadURL();
-          await firebaseDatabase.ref("menu/items").child(itemKey).child("image").set(imageUrl);
-          item.image = imageUrl;
+          let imageValue = item.image;
+          if (storageAvailable) {
+            const storageRef = firebaseStorage.ref(`menu-images/restored-${String(itemKey).replace(/[^a-zA-Z0-9_-]/g, "-")}.${extension}`);
+            try {
+              await storageRef.put(blob, { contentType: blob.type });
+              imageValue = await storageRef.getDownloadURL();
+            } catch (error) {
+              storageAvailable = false;
+              console.warn("Firebase Storage is unavailable; saving menu photos as Base64 in Realtime Database.", error);
+              savedAsBase64 += 1;
+            }
+          } else {
+            savedAsBase64 += 1;
+          }
+          await firebaseDatabase.ref("menu/items").child(itemKey).child("image").set(imageValue);
+          item.image = imageValue;
           uploaded += 1;
         }
 
@@ -1260,7 +1273,9 @@
         menuChannel?.postMessage({ type: "menu-update", items: menuItems, customCategories });
         renderMenu(searchInput.value);
         refreshAdminList(document.getElementById("adminListSearch")?.value || "");
-        status.textContent = `Restored ${uploaded} images for online visitors.`;
+        status.textContent = savedAsBase64
+          ? `Restored ${uploaded} images. ${savedAsBase64} are stored as Base64 because Firebase Storage is unavailable.`
+          : `Restored ${uploaded} images to Firebase Storage for online visitors.`;
       } catch (error) {
         status.textContent = `Stopped after ${uploaded} of ${itemsToRestore.length}: ${error.message || "check Firebase permissions and try again."}`;
       } finally {
