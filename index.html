@@ -240,10 +240,6 @@
     .admin-price-input { width: 118px; padding: .35rem .5rem; border: 1px solid var(--line); border-radius: 7px; color: var(--ink); background: rgba(255,255,255,.05); font-size: .75rem; }
     .admin-save-price { padding: .35rem .55rem; border: 1px solid var(--gold); border-radius: 7px; color: var(--gold); background: transparent; font-size: .7rem; cursor: pointer; }
     .admin-save-price:hover { color: #102f2b; background: var(--gold); }
-    .price-save-status { font-size: .65rem; color: var(--muted); margin-left: .5rem; }
-    .price-save-status.saving { color: var(--gold); }
-    .price-save-status.saved { color: #79c99a; }
-    .price-save-status.error { color: var(--coffee); }
     .admin-delete { width: 34px; height: 34px; border: 1px solid rgba(240,138,104,.45); border-radius: 50%; color: var(--coffee); background: transparent; cursor: pointer; }
     .admin-delete:hover { color: #fff; background: var(--coffee); }
     .admin-login { max-width: 420px; margin: 10vh auto 0; }
@@ -556,11 +552,8 @@
     if (savedMenu) {
       try {
         const savedItems = JSON.parse(savedMenu);
-        const fastCache = makeFastMenuCache(normalizeMenuItems(savedItems));
-        menuItems.splice(0, menuItems.length, ...fastCache);
-        if (fastCache.some((item, index) => item.image !== savedItems[index].image)) {
-          try { localStorage.setItem("shorash-menu-items", JSON.stringify(fastCache)); } catch (error) { console.warn("Could not shrink the local menu cache.", error); }
-        }
+        const normalizedItems = normalizeMenuItems(savedItems);
+        menuItems.splice(0, menuItems.length, ...normalizedItems);
       } catch (error) { localStorage.removeItem("shorash-menu-items"); }
     }
     menuItems.forEach(item => { item.category = categoryMigration(item); });
@@ -871,7 +864,7 @@
       const customCategories = Object.fromEntries(Object.entries(categoryDetails).filter(([name]) => !defaultCategories.includes(name)));
       const payload = { items: menuItems.map(item => ({ ...item })), customCategories };
       if (!firebaseDatabase) {
-        try { localStorage.setItem("shorash-menu-items", JSON.stringify(makeFastMenuCache(menuItems))); } catch (error) { console.warn("Local menu cache is unavailable.", error); }
+        try { localStorage.setItem("shorash-menu-items", JSON.stringify(menuItems)); } catch (error) { console.warn("Local menu cache is unavailable.", error); }
         try { localStorage.setItem("shorash-menu-categories", JSON.stringify(customCategories)); } catch (error) { console.warn("Local category cache is unavailable.", error); }
         pendingMenuWrite = null;
         menuChannel?.postMessage({ type: "menu-update", ...payload });
@@ -879,7 +872,7 @@
       }
       if (!firebaseAuth?.currentUser || !isAdminSessionValid()) {
         console.warn("Admin authentication is required to save menu changes. Saving locally only.");
-        try { localStorage.setItem("shorash-menu-items", JSON.stringify(makeFastMenuCache(menuItems))); } catch (error) { console.warn("Local menu cache is unavailable.", error); }
+        try { localStorage.setItem("shorash-menu-items", JSON.stringify(menuItems)); } catch (error) { console.warn("Local menu cache is unavailable.", error); }
         try { localStorage.setItem("shorash-menu-categories", JSON.stringify(customCategories)); } catch (error) { console.warn("Local category cache is unavailable.", error); }
         menuChannel?.postMessage({ type: "menu-update", ...payload });
         return;
@@ -893,7 +886,7 @@
         throw new Error(`Could not save this change online. ${reason}`);
       }).finally(() => { pendingMenuWrite = null; });
       await menuWriteQueue;
-      try { localStorage.setItem("shorash-menu-items", JSON.stringify(makeFastMenuCache(menuItems))); } catch (error) { console.warn("Local menu cache is unavailable; Firebase remains the source of truth.", error); }
+      try { localStorage.setItem("shorash-menu-items", JSON.stringify(menuItems)); } catch (error) { console.warn("Local menu cache is unavailable; Firebase remains the source of truth.", error); }
       try { localStorage.setItem("shorash-menu-categories", JSON.stringify(customCategories)); } catch (error) { console.warn("Local category cache is unavailable.", error); }
       menuChannel?.postMessage({ type: "menu-update", ...payload });
     }
@@ -948,7 +941,7 @@
         renderMenu(searchInput.value);
         refreshAdminList(document.getElementById("adminListSearch")?.value || "");
         const customCategories = Object.fromEntries(Object.entries(categoryDetails).filter(([name]) => !defaultCategories.includes(name)));
-        try { localStorage.setItem("shorash-menu-items", JSON.stringify(makeFastMenuCache(menuItems))); } catch (error) { console.warn("Could not cache the updated menu locally.", error); }
+        try { localStorage.setItem("shorash-menu-items", JSON.stringify(menuItems)); } catch (error) { console.warn("Could not cache the updated menu locally.", error); }
         menuChannel?.postMessage({ type: "menu-update", items: menuItems, customCategories });
       } catch (error) {
         if (error?.code === "PERMISSION_DENIED") throw new Error("Firebase denied the delete. Check the signed-in admin account and deployed database rules.");
@@ -1007,7 +1000,7 @@
       const visibleItems = menuItems.map((item, index) => ({ item, index })).filter(({ item }) => !normalizedQuery || `${item.name} ${item.category}`.toLowerCase().includes(normalizedQuery));
       const listCount = document.getElementById("adminListCount");
       if (listCount) listCount.textContent = `${visibleItems.length} of ${menuItems.length} items`;
-      adminList.innerHTML = visibleItems.length ? visibleItems.map(({ item, index }) => { const numericPrice = item.price.replace(/[^0-9]/g, ""); return `<div class="admin-item"><img src="${escapeAttribute(item.image)}" alt=""><div class="admin-item-info"><strong>${escapeAttribute(item.name)}</strong><span>${escapeAttribute(item.category)}</span><div class="admin-price-row"><input class="admin-price-input" data-price-index="${index}" value="${numericPrice}" inputmode="numeric" aria-label="Price for ${escapeAttribute(item.name)}" data-auto-save="${index}"><span class="price-save-status" data-status="${index}"></span></div><div class="admin-photo-row"><input class="admin-photo-input" data-photo-index="${index}" type="file" accept="image/*" aria-label="Choose photo for ${escapeAttribute(item.name)}"><button class="admin-save-price" type="button" data-save-photo="${index}">Save photo</button></div></div><button class="admin-delete" type="button" data-delete-index="${index}" aria-label="Delete ${escapeAttribute(item.name)}"><i class="fa-solid fa-trash" aria-hidden="true"></i></button></div>`; }).join("") : `<div class="admin-list-empty"><i class="fa-solid fa-magnifying-glass mb-2" aria-hidden="true"></i><br>No matching items.</div>`;
+      adminList.innerHTML = visibleItems.length ? visibleItems.map(({ item, index }) => { const numericPrice = item.price.replace(/[^0-9]/g, ""); return `<div class="admin-item"><img src="${escapeAttribute(item.image)}" alt=""><div class="admin-item-info"><strong>${escapeAttribute(item.name)}</strong><span>${escapeAttribute(item.category)}</span><div class="admin-price-row"><input class="admin-price-input" data-price-index="${index}" value="${numericPrice}" inputmode="numeric" aria-label="Price for ${escapeAttribute(item.name)}"><button class="admin-save-price" type="button" data-save-price="${index}">Save</button></div><div class="admin-photo-row"><input class="admin-photo-input" data-photo-index="${index}" type="file" accept="image/*" aria-label="Choose photo for ${escapeAttribute(item.name)}"><button class="admin-save-price" type="button" data-save-photo="${index}">Save photo</button></div></div><button class="admin-delete" type="button" data-delete-index="${index}" aria-label="Delete ${escapeAttribute(item.name)}"><i class="fa-solid fa-trash" aria-hidden="true"></i></button></div>`; }).join("") : `<div class="admin-list-empty"><i class="fa-solid fa-magnifying-glass mb-2" aria-hidden="true"></i><br>No matching items.</div>`;
       updateAdminSummary();
     }
     function showAdmin() {
@@ -1121,7 +1114,7 @@
         const localItem = Number.isInteger(index) ? menuItems[index] : menuItems.find(item => item.id === itemId);
         if (localItem) localItem.image = image;
         pendingMenuWrite = null;
-        try { localStorage.setItem("shorash-menu-items", JSON.stringify(makeFastMenuCache(menuItems))); } catch (error) { console.warn("Could not cache the updated menu photo locally.", error); }
+        try { localStorage.setItem("shorash-menu-items", JSON.stringify(menuItems)); } catch (error) { console.warn("Could not cache the updated menu photo locally.", error); }
         const customCategories = Object.fromEntries(Object.entries(categoryDetails).filter(([name]) => !defaultCategories.includes(name)));
         menuChannel?.postMessage({ type: "menu-update", items: menuItems, customCategories });
         renderMenu(searchInput.value);
@@ -1185,50 +1178,42 @@
     document.getElementById("adminLogout").addEventListener("click", clearAdminSession);
     window.setInterval(expireAdminSession, 30000);
     document.addEventListener("visibilitychange", expireAdminSession);
-    adminList.addEventListener("input", async event => {
-      const autoSaveInput = event.target.closest("[data-auto-save]");
-      if (autoSaveInput) {
-        const index = Number(autoSaveInput.dataset.autoSave);
-        const rawPrice = autoSaveInput.value.replace(/[^0-9]/g, "");
-        const statusElement = adminList.querySelector(`[data-status="${index}"]`);
-        
+    adminList.addEventListener("click", async event => {
+      const saveButton = event.target.closest("[data-save-price]");
+      if (saveButton) {
+        const index = Number(saveButton.dataset.savePrice);
+        const priceInput = adminList.querySelector(`[data-price-index="${index}"]`);
+        const rawPrice = priceInput.value.replace(/[^0-9]/g, "");
         if (!rawPrice) {
-          if (statusElement) statusElement.textContent = "";
+          adminCategoryError.textContent = "Please enter a valid price.";
           return;
         }
-        
-        if (statusElement) {
-          statusElement.textContent = "Saving...";
-          statusElement.className = "price-save-status saving";
-        }
-        
+        saveButton.disabled = true;
+        saveButton.textContent = "Saving...";
         const oldPrice = menuItems[index].price;
         menuItems[index].price = `IQD ${Number(rawPrice).toLocaleString("en-US")}`;
         renderMenu(searchInput.value);
-        
-        persistMenu().then(() => {
-          if (statusElement) {
-            statusElement.textContent = "✓ Saved";
-            statusElement.className = "price-save-status saved";
-            setTimeout(() => {
-              if (statusElement) statusElement.textContent = "";
-            }, 2000);
-          }
-        }).catch(error => {
+        try {
+          await persistMenu();
+          adminCategoryError.textContent = "Price updated successfully!";
+          adminCategoryError.style.color = "#79c99a";
+          setTimeout(() => {
+            adminCategoryError.textContent = "";
+            adminCategoryError.style.color = "";
+          }, 3000);
+        } catch (error) {
           menuItems[index].price = oldPrice;
           renderMenu(searchInput.value);
-          autoSaveInput.value = oldPrice.replace(/[^0-9]/g, "");
-          if (statusElement) {
-            statusElement.textContent = "✗ Failed";
-            statusElement.className = "price-save-status error";
-          }
-          console.error("Price save failed:", error);
-        });
+          priceInput.value = oldPrice.replace(/[^0-9]/g, "");
+          adminCategoryError.textContent = `Failed to save: ${error.message}`;
+          adminCategoryError.style.color = "var(--coffee)";
+        } finally {
+          saveButton.disabled = false;
+          saveButton.textContent = "Save";
+        }
         return;
       }
-    });
-    
-    adminList.addEventListener("click", async event => {
+      
       const deleteButton = event.target.closest("[data-delete-index]");
       if (deleteButton) {
         deleteButton.disabled = true;
@@ -1326,7 +1311,7 @@
       const safeItems = normalizeMenuItems(items);
       safeItems.forEach(item => { item.category = categoryMigration(item); });
       menuItems.splice(0, menuItems.length, ...safeItems);
-      try { localStorage.setItem("shorash-menu-items", JSON.stringify(makeFastMenuCache(menuItems))); } catch (error) { console.warn("Could not cache the live menu locally.", error); }
+      try { localStorage.setItem("shorash-menu-items", JSON.stringify(menuItems)); } catch (error) { console.warn("Could not cache the live menu locally.", error); }
       Object.keys(categoryDetails).filter(name => !defaultCategories.includes(name) && !customCategories[name]).forEach(name => delete categoryDetails[name]);
       Object.entries(customCategories).forEach(([name, details]) => { categoryDetails[name] = details; });
       syncCategories();
