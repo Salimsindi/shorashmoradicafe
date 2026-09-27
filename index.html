@@ -1380,7 +1380,7 @@
     function chooseSavedValue(localValue, remoteValue, fallbackValue = "") {
       const localHasValue = typeof localValue === "string" ? localValue.trim().length > 0 : Boolean(localValue);
       const remoteHasValue = typeof remoteValue === "string" ? remoteValue.trim().length > 0 : Boolean(remoteValue);
-      if (localHasValue) return localValue;
+      if (localHasValue && !(localValue === defaultMenuImage && remoteHasValue)) return localValue;
       if (remoteHasValue) return remoteValue;
       return fallbackValue;
     }
