@@ -720,20 +720,52 @@
     .intro-socials a:nth-child(3)::after { animation-delay: -3.2s; }
     @media (prefers-reduced-motion: reduce) { .intro-language::before, .intro-open::before, .intro-socials a::after { animation: none; } }
 
-    /* ================= BG SCROLL ENGINE v2 — FULL SCROLL-REACTIVE BACKGROUND ================= */
+    /* PERF v1 — BG SCROLL ENGINE v3: no per-frame blur re-raster.
+       Blur is baked into pre-blurred radial-gradient blobs on a STATIC layer.
+       Only compositor-cheap transforms + opacity animate per frame. */
     .bg-scroll-fx { position: fixed; inset: 0; z-index: -2; overflow: hidden; pointer-events: none; }
-    .bg-swirl { position: absolute; left: 50%; width: 92vmax; height: 92vmax; border-radius: 50%; filter: blur(85px); will-change: transform, opacity; }
-    .bg-swirl-a { top: -34vmax; background: conic-gradient(from 0deg, transparent 8%, rgba(229, 185, 104, .38) 30%, transparent 48%, rgba(237, 129, 48, .3) 68%, transparent 88%); transform: translate(-50%, calc(var(--sp, 0) * 58vh)) rotate(calc(var(--sp, 0) * 260deg)); opacity: calc(.1 + var(--sv, 0) * .24); }
-    .bg-swirl-b { bottom: -34vmax; background: conic-gradient(from 180deg, transparent 8%, rgba(53, 117, 185, .35) 32%, transparent 52%, rgba(143, 56, 23, .3) 72%, transparent 90%); transform: translate(-50%, calc(var(--sp, 0) * -58vh)) rotate(calc(var(--sp, 0) * -260deg)); opacity: calc(.1 + var(--sv, 0) * .24); }
+    .bg-swirl { position: absolute; left: 50%; top: 50%; width: 85vmax; height: 85vmax; margin: -42.5vmax 0 0 -42.5vmax; will-change: transform, opacity; }
+    .bg-swirl > i { position: absolute; inset: 0; border-radius: 50%; display: block; transform: translate(var(--ox, 0), var(--oy, 0)); will-change: transform; background: radial-gradient(circle at 30% 26%, rgba(229, 185, 104, .30), rgba(229, 185, 104, 0) 46%), radial-gradient(circle at 72% 68%, rgba(237, 129, 48, .26), rgba(237, 129, 48, 0) 44%), radial-gradient(circle at 24% 76%, rgba(53, 117, 185, .16), rgba(53, 117, 185, 0) 40%), radial-gradient(circle at 80% 32%, rgba(143, 56, 23, .16), rgba(143, 56, 23, 0) 38%); }
+    .bg-swirl-b > i { background: radial-gradient(circle at 70% 30%, rgba(53, 117, 185, .26), rgba(53, 117, 185, 0) 45%), radial-gradient(circle at 30% 70%, rgba(229, 185, 104, .22), rgba(229, 185, 104, 0) 42%), radial-gradient(circle at 78% 74%, rgba(143, 56, 23, .18), rgba(143, 56, 23, 0) 40%), radial-gradient(circle at 22% 24%, rgba(237, 129, 48, .14), rgba(237, 129, 48, 0) 36%); }
+    .bg-swirl-a { transform: translate(0, calc(var(--sp, 0) * 58vh)) rotate(calc(var(--sp, 0) * 150deg)); opacity: calc(.42 + var(--sv, 0) * .4); }
+    .bg-swirl-b { transform: translate(0, calc(var(--sp, 0) * -58vh)) rotate(calc(var(--sp, 0) * -150deg)); opacity: calc(.42 + var(--sv, 0) * .4); }
+    .bg-swirl-a > i { --ox: -12%; --oy: -6%; }
+    .bg-swirl-b > i { --ox: 10%; --oy: 8%; }
     .bg-stars, .bg-stars-far { position: absolute; top: 0; left: 0; width: 2px; height: 2px; border-radius: 50%; will-change: transform, opacity; }
     .bg-stars-far { transform: translateY(calc(var(--sp, 0) * -130px)); opacity: calc(.3 + var(--sv, 0) * .45); }
     .bg-stars { transform: translateY(calc(var(--sp, 0) * -280px)); opacity: calc(.5 + var(--sv, 0) * .5); }
-    .bg-speed { position: absolute; inset: 0; background: radial-gradient(ellipse at 50% 50%, transparent 56%, rgba(229, 185, 104, .14) 88%, rgba(237, 129, 48, .1) 100%); opacity: var(--sv, 0); }
+    .bg-speed { position: absolute; inset: 0; background: radial-gradient(ellipse at 50% 50%, transparent 56%, rgba(229, 185, 104, .14) 88%, rgba(237, 129, 48, .1) 100%); opacity: var(--sv, 0); will-change: opacity; }
 
     /* ================= BACK-TOP v2 — MATCH HAMBURGER GLASS/GOLD ================= */
     .back-top { border: 1px solid rgba(229, 185, 104, .5); color: #f2d9a4; background: rgba(8, 20, 34, .62); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); box-shadow: 0 10px 24px rgba(0, 0, 0, .4), inset 0 1px 0 rgba(255, 255, 255, .1); }
     .back-top:hover, .back-top:focus-visible { color: #071524; background: linear-gradient(145deg, #ffd98a, #e5b968 45%, #ed8130); border-color: #ffcf87; box-shadow: 0 14px 30px rgba(229, 185, 104, .45), inset 0 1px 0 rgba(255, 255, 255, .4); transform: translateY(-4px) scale(1.06); outline: none; }
     .back-top:active { transform: scale(.9); }
+
+    /* ================= PERF v1 — GOO ORBIT: GPU rotation instead of per-frame conic repaint =================
+       The old rings animated a registered custom property (--goo-a), which makes the browser re-paint the
+       conic gradient on the MAIN THREAD every frame (~20ms/frame measured during scroll). A plain
+       transform: rotate() on a circle (or on a disc clipped by a static mask) is composited on the GPU. */
+    @keyframes gooOrbitSpin { to { transform: rotate(360deg); } }
+    .nav-actions .icon-button::after { background: conic-gradient(from 0deg, rgba(229, 185, 104, .1) 0deg, rgba(229, 185, 104, .1) 285deg, #e5b968 318deg, #ffd98a 338deg, #ed8130 350deg, rgba(229, 185, 104, .1) 360deg); animation: gooOrbitSpin 5s ease-in-out infinite alternate; will-change: transform; }
+    .nav-actions #focusSearch::after { animation-delay: -2.5s; }
+    .intro-socials a::after { background: conic-gradient(from 0deg, transparent 0deg, transparent 278deg, currentColor 318deg, currentColor 352deg, transparent 360deg); animation: gooOrbitSpin 5s ease-in-out infinite alternate; will-change: transform; }
+    .intro-socials a:nth-child(2)::after { animation-delay: -1.6s; }
+    .intro-socials a:nth-child(3)::after { animation-delay: -3.2s; }
+    /* Pills: rotating masked discs / clipped interior sweeps re-rasterize on CPU every frame (measured
+       ~20ms each). Rings stay static; the goo motion is a bright capsule riding the rim with translateX
+       only (same technique as .slider-dots::after, which measured as free). */
+    .search-box::before, .intro-language::before, .intro-open::before { animation: none; }
+    .goo-comet { position: absolute; left: 8%; bottom: -2.5px; z-index: 2; width: 22%; height: 5px; border-radius: 999px; pointer-events: none; background: linear-gradient(90deg, transparent, #ffd98a 32%, #ed8130 62%, transparent); filter: blur(.5px) drop-shadow(0 0 6px rgba(237, 129, 48, .5)); transform: translateX(0); will-change: transform; animation: gooComet 4.6s ease-in-out infinite alternate; }
+    @keyframes gooComet { to { transform: translateX(275%); } }
+    .intro-open .goo-comet { bottom: 2px; }
+    /* Header hairline: background-position shimmer + drop-shadow repainted the whole strip every frame.
+       Track goes static; a goo capsule runs along it instead (reuses gooRun). */
+    .site-header::before { animation: none; }
+    .hair-goo { position: absolute; right: 0; bottom: -5px; left: 0; z-index: 2; height: 7px; pointer-events: none; overflow: hidden; }
+    .hair-goo > i { position: absolute; left: 7%; width: 20%; height: 3px; border-radius: 999px; background: linear-gradient(90deg, transparent, #ffd98a 30%, #ed8130 55%, transparent); filter: blur(.5px) drop-shadow(0 0 7px rgba(237, 129, 48, .6)); will-change: transform; animation: gooRun 4.5s ease-in-out infinite alternate; }
+    /* The hidden intro loader kept animating + decoding video behind the menu forever. */
+    .loader.done, .loader.done *, .loader.done *::before, .loader.done *::after { animation-play-state: paused; }
+    @media (prefers-reduced-motion: reduce) { .goo-comet, .hair-goo > i { animation: none; } .nav-actions .icon-button::after, .intro-socials a::after { animation: none; } }
   </style>
 </head>
   <body class="intro-active">
@@ -913,7 +945,7 @@
       "Hot Coffee": "مشروبات دافئة ومحضرة بعناية.", "Iced Coffee": "قهوة باردة ومنعشة.", "Red Bull": "طاقة منعشة ليومك.", "Bris Mojito": "مشروبات منعشة للمشاركة.", Milkshake: "كريمية ولذيذة وباردة.", Smoothie: "فواكه طازجة ممزوجة بنعومة.", "Iced Tea": "شاي بارد ومنعش.", Juice: "عصائر طبيعية ومشرقة.", Crepe: "حلويات مقهى محضرة حسب الطلب.", "Mini Pancake": "لقيمات صغيرة بطعم كبير.", Waffle: "ذهبية ومقرمشة ومناسبة للمشاركة.", Kunafa: "نهاية حلوة بلمسة محلية.", "Thai Doodorma": "أطباق شهية ومريحة.",
     };
     const categoryBadiniNames = { "Hot Coffee": "قەھوەیا گەرم", "Iced Coffee": "قەھوەیا سار", "Red Bull": "ڕێد بوڵ", "Bris Mojito": "بریس مۆجیتۆ", Milkshake: "میلک شەیک", Smoothie: "سمووتی", "Iced Tea": "چا یا سار", Juice: "شەربەت", Crepe: "کرێپ", "Mini Pancake": "پانکەیکی بچووک", Waffle: "وافل", Kunafa: "کونەفە", "Thai Doodorma": "تای دودورما" };
-    const categoryBadiniDescriptions = { "Hot Coffee": "ڤەخوارنێن گەرم", "Iced Coffee": "قەھوەیا سار و تازە.", "Red Bull": "ئەنەرژیەکا تازە ژ بۆ روژا تە.", "Bris Mojito": "مۆجيتۆ و ڤەخوارنێن سار.", Milkshake: "شیرین و کریمی، ب تامەکێ خۆش.", Smoothie: "فاکێنێن تازە، هاتینە تێکدان.", "Iced Tea": "چا یا سار و تازە.", Juice: "شەربەتێن سروشتی و تازە.", Crepe: "کرێپێن نرم یێن ب دەمێ هاتینە ئامادەکرن.", "Mini Pancake": "پانکەیکێن بچووک، بە تامەکێ مەزن.", Waffle: "وافلێن زێڕین و قرچە، بۆ هاڤالبارنێ.", Kunafa: "دەمەکا شیرین ب شێوازەکا هەرێمی.", "Mini Waffle": "وافلێن بچووک، زێڕین و قرچە.", "Thai Doodorma": "خوارنێن خوش و دلخواز." };
+    const categoryBadiniDescriptions = { "Hot Coffee": "ڤەخوارنێن گەرم", "Iced Coffee": "قەھوەیا سار و تازە.", "Red Bull": "ئەنەرژیەکا تازە ژ بۆ روژا تە.", "Bris Mojito": "مۆجيتۆ و ڤەخوارنێن سار.", Milkshake: "شیرین و کریمی، ب تامەکێ خۆش.", Smoothie: "سموۆثییا سار", "Iced Tea": "چا یا سار و تازە.", Juice: "شەربەتێن سروشتی و تازە.", Crepe: "کرێپێن نەرم و شرین", "Mini Pancake": "پانکەیکێن بچووک", Waffle: "وافلێن زێڕین", Kunafa: "خۆشترین کۆنافە", "Mini Waffle": "وافلێن بچووک", "Thai Doodorma": "دوندورما تایڵەندی" };
     const defaultCategories = Object.keys(categoryDetails);
     const categoryMigration = item => {
       if (item.category === "Coffee") return "Hot Coffee";
@@ -2321,13 +2353,13 @@
       restart();
     })();
 
-    // ---- BG SCROLL ENGINE v2: progress + velocity driven background ----
+    // ---- BG SCROLL ENGINE v3: progress + velocity driven background (perf-safe) ----
     (function () {
       if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
       const fx = document.createElement("div");
       fx.className = "bg-scroll-fx";
       fx.setAttribute("aria-hidden", "true");
-      fx.innerHTML = '<div class="bg-swirl bg-swirl-a"></div><div class="bg-swirl bg-swirl-b"></div><div class="bg-stars-far"></div><div class="bg-stars"></div><div class="bg-speed"></div>';
+      fx.innerHTML = '<div class="bg-stars-far"></div><div class="bg-stars"></div><div class="bg-speed"></div>';
       document.body.appendChild(fx);
       function makeStars(el, count, color) {
         const w = Math.max(window.innerWidth, 380), h = Math.max(window.innerHeight, 500) * 1.8;
@@ -2340,21 +2372,74 @@
       }
       makeStars(fx.querySelector(".bg-stars"), 70, "rgba(255, 244, 214, .9)");
       makeStars(fx.querySelector(".bg-stars-far"), 50, "rgba(229, 185, 104, .55)");
-      let vel = 0, lastY = window.scrollY, running = false;
+      /* PERF: --sp/--sv are set on fx (a 5-child subtree), NOT on body. Setting them
+         on body re-ran style for the entire menu DOM every animation frame. */
+      let vel = 0, lastY = window.scrollY, running = false, lastSp = -1, lastSv = -1;
       function frame() {
         const y = window.scrollY;
         const dy = Math.abs(y - lastY);
         lastY = y;
         vel = Math.min(1, vel * .86 + dy / 55);
         const max = Math.max(document.documentElement.scrollHeight - window.innerHeight, 1);
-        document.body.style.setProperty("--sp", (y / max).toFixed(4));
-        document.body.style.setProperty("--sv", vel.toFixed(3));
-        if (vel > .004) { requestAnimationFrame(frame); } else { running = false; document.body.style.setProperty("--sv", "0"); }
+        const sp = +(y / max).toFixed(3);
+        const sv = vel > .004 ? +vel.toFixed(2) : 0;
+        if (sp !== lastSp) { fx.style.setProperty("--sp", sp); lastSp = sp; }
+        if (sv !== lastSv) { fx.style.setProperty("--sv", sv); lastSv = sv; }
+        if (vel > .004) { requestAnimationFrame(frame); } else { running = false; }
       }
       function kick() { if (!running) { running = true; requestAnimationFrame(frame); } }
       window.addEventListener("scroll", kick, { passive: true });
       window.addEventListener("load", kick);
       kick();
+    })();
+
+    // ---- PERF v1: goo comets on pills + pause hidden loader video ----
+    (function () {
+      var reduce = window.matchMedia("(prefers-reduced-motion: reduce)");
+      function makeComet(el, delay) {
+        var c = document.createElement("span");
+        c.className = "goo-comet";
+        c.setAttribute("aria-hidden", "true");
+        if (delay && delay !== "0s") c.style.animationDelay = delay;
+        el.appendChild(c);
+      }
+      function attachComet(el, delay) {
+        if (!el || el.dataset.gooComet) return;
+        el.dataset.gooComet = "1";
+        makeComet(el, delay);
+        /* The intro button's textContent gets reassigned by the language code, which wipes the comet.
+           Watch and put it back — view-layer only, no data code touched. */
+        new MutationObserver(function () {
+          if (!el.querySelector(".goo-comet")) makeComet(el, delay);
+        }).observe(el, { childList: true });
+      }
+      function build() {
+        if (reduce.matches) return;
+        document.querySelectorAll(".search-box").forEach(function (el) { attachComet(el, "0s"); });
+        document.querySelectorAll(".intro-language").forEach(function (el, n) { attachComet(el, (-1.5 * n) + "s"); });
+        document.querySelectorAll(".intro-open").forEach(function (el) { attachComet(el, "-0.8s"); });
+        var header = document.querySelector(".site-header");
+        if (header && !header.dataset.hairGoo) {
+          header.dataset.hairGoo = "1";
+          var hair = document.createElement("span");
+          hair.className = "hair-goo";
+          hair.setAttribute("aria-hidden", "true");
+          hair.appendChild(document.createElement("i"));
+          header.appendChild(hair);
+        }
+      }
+      build();
+      window.addEventListener("load", build);
+      var loader = document.getElementById("loader");
+      var vid = loader ? loader.querySelector(".loader-video") : null;
+      if (loader && vid) {
+        function sync() {
+          if (loader.classList.contains("done")) { vid.pause(); }
+          else if (vid.paused) { var p = vid.play(); if (p && p.catch) p.catch(function () {}); }
+        }
+        new MutationObserver(sync).observe(loader, { attributes: true, attributeFilter: ["class"] });
+        sync();
+      }
     })();
   </script>
 </body>
