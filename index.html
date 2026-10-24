@@ -159,6 +159,22 @@
     .modal-title-row { display: flex; align-items: start; justify-content: space-between; gap: 1rem; margin-top: .35rem; }
     .modal-title-row h2 { margin: 0; font-size: 2rem; }
     .modal-description { color: var(--muted); line-height: 1.7; }
+    @property --welcome-angle { syntax: "<angle>"; inherits: false; initial-value: 0deg; }
+    .welcome-modal .modal-dialog { max-width: min(90vw, 390px); }
+    .welcome-content { position: relative; overflow: hidden; align-items: center; padding: 1.7rem 1.4rem 1.4rem; border: 1px solid rgba(237, 129, 48, .48); border-radius: 16px; color: #f5f5f5; background: linear-gradient(145deg, #32180d, #17110d 72%, #28150d); text-align: center; box-shadow: 0 24px 70px rgba(0, 0, 0, .58), 0 0 28px rgba(194, 85, 30, .14); }
+    .welcome-content > * { position: relative; z-index: 1; }
+    .welcome-content::before { content: ""; position: absolute; inset: 0; z-index: 0; padding: 2px; border-radius: inherit; background: conic-gradient(from var(--welcome-angle), transparent 0 68%, #ed8130 77%, #ffd166 82%, #ed8130 87%, transparent 96% 100%); -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); mask-composite: exclude; filter: drop-shadow(0 0 5px rgba(237, 129, 48, .8)); animation: welcomeLine 3.5s linear infinite; pointer-events: none; }
+    .welcome-modal.show .welcome-content { animation: welcomeReveal .55s cubic-bezier(.2, .8, .2, 1) both; }
+    .welcome-close { position: absolute; top: .75rem; right: .75rem; width: 38px; height: 38px; display: grid; place-items: center; border: 1px solid rgba(255, 255, 255, .22); border-radius: 50%; color: #fff; background: rgba(255, 255, 255, .06); }
+    .welcome-logo { width: min(58vw, 165px); height: 58px; margin-bottom: .45rem; object-fit: contain; filter: brightness(0) saturate(100%) invert(76%) sepia(31%) saturate(750%) hue-rotate(358deg) brightness(95%) contrast(88%) drop-shadow(0 8px 14px rgba(0, 0, 0, .38)); animation: welcomeLogoFloat 3.4s ease-in-out infinite; }
+    .welcome-kicker { margin: 0 0 .35rem; color: #ffad55; font-size: .66rem; font-weight: 800; letter-spacing: .16em; text-transform: uppercase; }
+    .welcome-title { margin: 0; color: #fff; font-size: 1.65rem; line-height: 1.25; }
+    .welcome-copy { max-width: 320px; margin: .55rem 0 0; color: rgba(245, 245, 245, .76); font-size: .84rem; line-height: 1.6; }
+    .welcome-action { margin-top: .95rem; padding: .65rem 1.05rem; border: 1px solid #ffad55; border-radius: 8px; color: #fff4e8; background: #9b3f18; font-weight: 800; transition: transform .2s ease, background .2s ease, box-shadow .2s ease; }
+    .welcome-action:hover, .welcome-action:focus-visible { color: #fff; background: #c2551e; box-shadow: 0 8px 22px rgba(194, 85, 30, .28); transform: translateY(-2px); outline: none; }
+    @keyframes welcomeLine { to { --welcome-angle: 360deg; } }
+    @keyframes welcomeReveal { from { opacity: 0; transform: translateY(14px) scale(.97); } to { opacity: 1; transform: translateY(0) scale(1); } }
+    @keyframes welcomeLogoFloat { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
     .back-top { position: fixed; right: 1.25rem; bottom: 1.25rem; z-index: 18; width: 46px; height: 46px; display: grid; place-items: center; border: 0; border-radius: 50%; color: var(--paper); background: var(--espresso); box-shadow: var(--shadow); opacity: 0; visibility: hidden; transform: translateY(12px); transition: .3s ease; }
     .back-top.visible { opacity: 1; visibility: visible; transform: none; }
     .mobile-menu { position: fixed; inset: 0; z-index: 50; display: flex; justify-content: flex-end; background: rgba(5, 24, 22, .45); opacity: 0; visibility: hidden; transition: opacity .3s ease, visibility .3s ease; }
@@ -287,6 +303,7 @@
     .intro-open:hover, .intro-open:focus-visible { background: #c2551e; transform: translateY(-3px) scale(1.03); box-shadow: 0 12px 30px rgba(191, 72, 22, .42), 0 0 0 5px rgba(235, 126, 44, .12); outline: none; }
     .intro-open:active { transform: translateY(0) scale(.96); }
     .loader.is-opening .intro-open { opacity: 0; transform: translateY(10px) scale(.92); }
+    .loader .intro-socials { justify-content: center; margin: .9rem 0 0; }
     .intro-languages { display: flex; justify-content: center; gap: .4rem; margin-top: 1.15rem; animation: introLanguagesIn .8s both .35s; }
     .intro-language { padding: .42rem .7rem; border: 1px solid rgba(229, 185, 104, .42); border-radius: 999px; color: var(--muted); background: rgba(7, 31, 28, .28); cursor: pointer; font-size: .68rem; font-weight: 700; transition: color .25s ease, background .25s ease, border-color .25s ease, transform .25s ease; }
     .intro-language:hover, .intro-language:focus-visible, .intro-language.active { color: #102f2b; background: var(--gold); border-color: var(--gold); transform: translateY(-2px); outline: none; }
@@ -320,15 +337,414 @@
     @media (max-width: 767px) { .category-bar { display: none; } .nav-wrap { min-height: 82px; } .brand { gap: .45rem; } .brand-mark { width: 52px; height: 64px; padding: 1px; border-radius: 9px; } .brand-arabic { font-size: 1.08rem; } .brand-latin { font-size: .56rem; letter-spacing: .08em; } .coffee-spark { font-size: .76rem; } .hero { min-height: 485px; } .hero-content { padding: 6rem 0 5rem; } .search-panel { margin-top: 1rem; padding: .65rem .75rem; } .menu-section { padding-top: 3.3rem; } .section-heading { align-items: start; flex-direction: column; gap: .25rem; } .card-image { aspect-ratio: 1.08 / 1; } .card-body { min-height: 128px; padding: .8rem; } .card-body h3 { font-size: .9rem; line-height: 1.15; } .price { font-size: .74rem; } .card-body p { margin-top: .35rem; font-size: .68rem; line-height: 1.3; } .badge-soft { font-size: .52rem; padding: .2rem .35rem; } .footer-brand { font-size: .85rem; letter-spacing: .1em; } .footer-logo { width: 150px; height: 66px; } .footer-cowboy-logo { width: 68px; height: 68px; } .footer-arabic { font-size: 1rem; } .footer-bottom { flex-direction: column; } }
     @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; transition-duration: .01ms !important; } }
   </style>
+  <style id="menu-3d-layer">
+    /* ==================================================================
+       SHORASH 3D MENU LAYER — visual/animation redesign only.
+       Purely additive: touches no menu data, Firebase or rendering logic.
+       ================================================================== */
+
+    /* ---------- Category bar: floating 3D pills ---------- */
+    .category-link { transform-style: preserve-3d; will-change: transform; }
+    .category-link:hover, .category-link:focus-visible { transform: perspective(560px) translateY(-4px) rotateX(18deg) scale(1.05); box-shadow: 0 14px 28px rgba(155, 63, 24, .4), inset 0 1px 0 rgba(255, 255, 255, .1); }
+    .category-link.active { background: linear-gradient(160deg, #b94b1c, #8f3817 55%, #6d2a11); border-color: #ffad67; box-shadow: 0 12px 28px rgba(155, 63, 24, .48), inset 0 1px 0 rgba(255, 255, 255, .18); transform: perspective(560px) translateZ(8px); }
+    .category-link:hover i, .category-link.active i { transform: perspective(420px) translateZ(10px) rotate(-10deg) scale(1.14); }
+
+    /* ---------- Mobile drawer: 3D door opening ---------- */
+    .mobile-menu { perspective: 1600px; background: rgba(3, 12, 20, .6); -webkit-backdrop-filter: blur(7px); backdrop-filter: blur(7px); }
+    .mobile-menu-panel { transform-origin: right center; backface-visibility: hidden; will-change: transform; transform: translateX(100%) rotateY(-55deg); box-shadow: none; transition: transform .62s cubic-bezier(.16, .84, .3, 1), box-shadow .62s ease; }
+    .mobile-menu.open .mobile-menu-panel { transform: translateX(0) rotateY(0); box-shadow: -34px 0 80px rgba(0, 0, 0, .55), -4px 0 0 rgba(229, 185, 104, .35); }
+    .mobile-menu-panel::before { content: ""; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(285deg, rgba(229, 185, 104, .16), transparent 46%); opacity: 0; transition: opacity .6s ease; }
+    .mobile-menu.open .mobile-menu-panel::before { opacity: 1; }
+    .mobile-menu-link { transform-origin: right center; }
+    .mobile-menu.open .mobile-menu-link { animation: menu3dLinkIn .55s cubic-bezier(.2, .8, .2, 1) backwards; }
+    .mobile-menu.open .mobile-menu-link:nth-child(1) { animation-delay: .1s; }
+    .mobile-menu.open .mobile-menu-link:nth-child(2) { animation-delay: .15s; }
+    .mobile-menu.open .mobile-menu-link:nth-child(3) { animation-delay: .2s; }
+    .mobile-menu.open .mobile-menu-link:nth-child(4) { animation-delay: .25s; }
+    .mobile-menu.open .mobile-menu-link:nth-child(5) { animation-delay: .3s; }
+    .mobile-menu.open .mobile-menu-link:nth-child(6) { animation-delay: .35s; }
+    .mobile-menu.open .mobile-menu-link:nth-child(7) { animation-delay: .4s; }
+    .mobile-menu.open .mobile-menu-link:nth-child(8) { animation-delay: .45s; }
+    .mobile-menu.open .mobile-menu-link:nth-child(9) { animation-delay: .5s; }
+    .mobile-menu.open .mobile-menu-link:nth-child(10) { animation-delay: .55s; }
+    .mobile-menu.open .mobile-menu-link:nth-child(11) { animation-delay: .6s; }
+    .mobile-menu.open .mobile-menu-link:nth-child(n + 12) { animation-delay: .65s; }
+    @keyframes menu3dLinkIn { from { opacity: 0; transform: translateX(52px) rotateY(-48deg); } 60% { opacity: 1; } to { opacity: 1; transform: translateX(0) rotateY(0); } }
+    .mobile-menu-link:hover, .mobile-menu-link.active { transform: perspective(700px) translateX(9px) rotateY(-9deg) scale(1.02); }
+    .mobile-menu-link:hover i, .mobile-menu-link.active i { transform: translateZ(8px) rotate(-8deg) scale(1.1); }
+
+    /* ---------- Menu sections: cards fly in with depth ---------- */
+    .menu-section .row { perspective: 1500px; }
+    .menu-section .reveal { transform: translateY(44px) rotateX(-20deg) scale(.92); transform-origin: 50% 100%; transition: opacity .75s cubic-bezier(.2, .8, .2, 1), transform .75s cubic-bezier(.2, .8, .2, 1); }
+    .menu-section .reveal.show { transform: none; }
+
+    /* ---------- Menu cards: pointer-tracked 3D tilt + glare ---------- */
+    .menu-card { border-radius: 26px; will-change: transform; transition: transform .45s cubic-bezier(.2, .8, .2, 1), box-shadow .45s ease; }
+    .menu-card::before { content: ""; position: absolute; inset: auto 0 0 0; z-index: 2; height: 3px; background: linear-gradient(90deg, transparent, var(--gold), #ed8130, transparent); opacity: 0; transition: opacity .35s ease; }
+    .menu-card::after { content: ""; position: absolute; inset: 0; z-index: 3; pointer-events: none; opacity: 0; background: radial-gradient(circle 260px at var(--gx, 50%) var(--gy, 50%), rgba(255, 244, 214, .32), rgba(237, 129, 48, .12) 42%, transparent 68%); transition: opacity .35s ease; }
+    .menu-card:hover::before, .menu-card.is-tilting::before { opacity: .9; }
+    .menu-card.is-tilting::after { opacity: 1; }
+    .menu-card.is-tilting { box-shadow: 0 30px 62px rgba(0, 0, 0, .52), 0 0 0 1px rgba(229, 185, 104, .38), 0 0 38px rgba(229, 185, 104, .16); }
+    .card-image img { transition: filter .5s ease, transform .5s cubic-bezier(.2, .8, .2, 1); }
+    .menu-card.is-tilting .card-image img { transform: scale(1.05) translateY(-3px); filter: saturate(1.18) brightness(1.05); }
+    .card-body h3, .price, .badge-soft { transition: transform .35s cubic-bezier(.2, .8, .2, 1), color .3s ease, filter .3s ease; }
+    .menu-card.is-tilting .card-body h3 { transform: translateY(-2px); }
+    .menu-card.is-tilting .price { transform: translateY(-3px) scale(1.09); color: #ff9b4a; filter: drop-shadow(0 4px 10px rgba(237, 129, 48, .45)); }
+    .menu-card.is-tilting .badge-soft { transform: translateY(-2px) scale(1.04); }
+
+    /* ---------- Section headings: engraved gold look ---------- */
+    .menu-section .section-heading h2 { text-shadow: 0 2px 0 rgba(0, 0, 0, .22), 0 8px 22px rgba(229, 185, 104, .12); }
+
+    @media (prefers-reduced-motion: reduce) { .mobile-menu.open .mobile-menu-link { animation: none; } .menu-card::after, .menu-card.is-tilting .card-image img { opacity: 0; transform: none; } }
+
+    /* ================= LIVE ANIMATED BACKGROUND ================= */
+    .bg-live { position: fixed; inset: 0; z-index: -3; overflow: hidden; pointer-events: none; }
+    .bg-aurora { position: absolute; left: 50%; width: 130vmax; height: 130vmax; max-width: none; border-radius: 50%; filter: blur(90px); will-change: transform; }
+    .bg-aurora-a { top: -45vh; opacity: .14; background: radial-gradient(circle at 42% 40%, rgba(229, 185, 104, .85), transparent 55%), radial-gradient(circle at 64% 62%, rgba(237, 129, 48, .6), transparent 52%); transform: translate(-50%, -70%); }
+    .bg-aurora-b { bottom: -55vh; opacity: .12; background: radial-gradient(circle at 55% 45%, rgba(53, 117, 185, .7), transparent 55%), radial-gradient(circle at 38% 64%, rgba(143, 56, 23, .55), transparent 50%); transform: translate(-50%, 60%); }
+    .bg-steam { position: absolute; bottom: -15vh; width: var(--s, 90px); height: var(--s, 90px); border-radius: 50%; background: radial-gradient(circle, rgba(229, 185, 104, .45), rgba(237, 129, 48, .12) 55%, transparent 70%); filter: blur(16px); opacity: 0; animation: steamRise var(--d, 16s) linear var(--dl, 0s) infinite; will-change: transform, opacity; }
+    @keyframes steamRise { 0% { transform: translate3d(0, 0, 0) scale(.55); opacity: 0; } 14% { opacity: .5; } 70% { opacity: .26; } 100% { transform: translate3d(0, -122vh, 0) scale(1.4); opacity: 0; } }
+
+    /* ================= SCROLL-DRIVEN HEADER / BAR ================= */
+    .site-header { transition: background .35s ease, box-shadow .35s ease; }
+    .site-header.scrolled { background: rgba(6, 17, 30, .97); box-shadow: 0 12px 32px rgba(0, 0, 0, .5), 0 1px 0 rgba(229, 185, 104, .25); }
+    .nav-wrap, .brand-mark, .brand-arabic { transition: min-height .35s cubic-bezier(.2, .8, .2, 1), height .35s cubic-bezier(.2, .8, .2, 1), width .35s cubic-bezier(.2, .8, .2, 1), font-size .35s ease, min-height .35s ease; }
+    .site-header.scrolled .nav-wrap { min-height: 64px; }
+    .site-header.scrolled .brand-mark { width: 46px; height: 56px; }
+    .site-header.scrolled .brand-mark-secondary { width: 62px; height: 48px; }
+    .site-header.scrolled .brand-arabic { font-size: 1.06rem; }
+    .category-bar { transition: background .35s ease, box-shadow .35s ease; }
+    body.is-scrolled .category-bar { background: rgba(6, 17, 30, .97); box-shadow: 0 14px 30px rgba(0, 0, 0, .42); }
+
+    /* ================= SCROLL ANIMATIONS (modern browsers) ================= */
+    @media (prefers-reduced-motion: no-preference) {
+      @supports (animation-timeline: view()) {
+        .menu-section .section-heading h2 { animation: headingDrift linear both; animation-timeline: view(); animation-range: entry 5% cover 32%; }
+        .menu-section .view-label { animation: labelDrift linear both; animation-timeline: view(); animation-range: entry 0% cover 26%; }
+        .menu-section .section-heading p { animation: labelDrift linear both; animation-timeline: view(); animation-range: entry 2% cover 28%; }
+        @keyframes headingDrift { from { opacity: 0; transform: translateY(34px) rotateX(26deg) scale(.96); transform-origin: 50% 100%; } to { opacity: 1; transform: none; } }
+        @keyframes labelDrift { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
+      }
+    }
+
+    /* ================= PREMIUM 3D DRAWER MENU ================= */
+    .mobile-menu-panel { position: relative; background: linear-gradient(168deg, #0d2438 0%, #081a2b 46%, #0e2338 100%); border-left: 1px solid rgba(229, 185, 104, .4); }
+    .mobile-menu-links::after { content: "SHORASH MORADI CAFÉ"; display: block; margin-top: 1.4rem; padding-top: 1rem; border-top: 1px solid rgba(229, 185, 104, .18); text-align: center; color: rgba(229, 185, 104, .5); font-size: .58rem; font-weight: 700; letter-spacing: .34em; }
+    .mobile-menu-head { border-bottom: 1px solid transparent; border-image: linear-gradient(90deg, transparent, rgba(229, 185, 104, .65), transparent) 1; }
+    #mobileMenuTitle { background: linear-gradient(90deg, #e5b968, #fff0cf 45%, #ed8130); -webkit-background-clip: text; background-clip: text; color: transparent; letter-spacing: .32em; font-weight: 800; }
+    .mobile-menu-link { position: relative; overflow: hidden; border: 1px solid rgba(229, 185, 104, .16); background: linear-gradient(140deg, rgba(255, 255, 255, .05), rgba(143, 56, 23, .14)); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .06), 0 4px 14px rgba(0, 0, 0, .18); }
+    .mobile-menu-link i { background: radial-gradient(circle at 32% 28%, #f08a3c, #8f3817 72%); border-color: rgba(255, 173, 103, .55); color: #fff4e8; box-shadow: 0 6px 16px rgba(155, 63, 24, .4), inset 0 1px 0 rgba(255, 255, 255, .25); }
+    .mobile-menu-link::after { content: ""; position: absolute; top: 0; bottom: 0; left: -60%; width: 42%; background: linear-gradient(105deg, transparent, rgba(255, 244, 214, .2), transparent); transform: skewX(-20deg); opacity: 0; pointer-events: none; }
+    .mobile-menu-link:hover::after, .mobile-menu-link.active::after { opacity: 1; animation: drawerSheen .9s ease; }
+    @keyframes drawerSheen { from { left: -60%; } to { left: 125%; } }
+    .mobile-menu-link:hover, .mobile-menu-link.active { color: #fff4e8; background: linear-gradient(140deg, #c2551e, #7d2f12 78%); border-color: #ffad67; box-shadow: 0 16px 34px rgba(155, 63, 24, .5), inset 0 1px 0 rgba(255, 255, 255, .22); }
+    .mobile-menu-link:hover i, .mobile-menu-link.active i { color: #fff4e8; background: radial-gradient(circle at 32% 28%, #ffc185, #c2551e 75%); border-color: #ffad67; }
+
+    /* ================= FLOATING MODERN HEADER — no bar ================= */
+    .site-header, .site-header.scrolled { background: transparent; border-bottom: 0; -webkit-backdrop-filter: none; backdrop-filter: none; box-shadow: none; }
+    .site-header.scrolled .nav-wrap { min-height: 66px; }
+    .brand { gap: .55rem; }
+    .brand-mark { position: relative; width: 66px; height: 66px; padding: 0; border: 2px solid transparent; border-radius: 50%; background: linear-gradient(#0a1c30, #0a1c30) padding-box, conic-gradient(from 210deg, #e5b968, #ed8130, #8f3817, #ffad67, #e5b968) border-box; box-shadow: 0 10px 26px rgba(0, 0, 0, .45), 0 0 20px rgba(229, 185, 104, .22); transition: transform .55s cubic-bezier(.2, .8, .2, 1), box-shadow .45s ease; }
+    .brand-mark img { width: 100%; height: 100%; border-radius: 50%; }
+    .brand-mark-secondary { width: 74px; height: 58px; border-radius: 16px; background: linear-gradient(150deg, rgba(229, 185, 104, .14), rgba(8, 20, 34, .9)) padding-box, linear-gradient(150deg, #e5b968, #8f3817) border-box; }
+    .brand-mark-secondary img { border-radius: 12px; }
+    .brand:hover .brand-mark { transform: rotate(-6deg) scale(1.07); box-shadow: 0 14px 32px rgba(0, 0, 0, .5), 0 0 28px rgba(237, 129, 48, .42); }
+    .brand-arabic { background: linear-gradient(92deg, #f7dfa5, #e5b968 35%, #ed8130 75%, #ffb46b); -webkit-background-clip: text; background-clip: text; color: transparent; text-shadow: none; filter: drop-shadow(0 2px 10px rgba(229, 185, 104, .35)); }
+    .brand-latin { color: rgba(245, 240, 230, .72); letter-spacing: .22em; text-transform: uppercase; font-size: .58rem; }
+    .site-header.scrolled .brand-mark { width: 54px; height: 54px; }
+    .site-header.scrolled .brand-mark-secondary { width: 62px; height: 48px; }
+    .site-header.scrolled .brand-arabic { font-size: 1.06rem; }
+
+    /* ---------- Glass floating action buttons (hamburger + search) ---------- */
+    .nav-actions { gap: .6rem; }
+    .nav-actions .icon-button { width: 47px; height: 47px; border: 1px solid rgba(229, 185, 104, .5); color: #f2d9a4; background: rgba(8, 20, 34, .62); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); box-shadow: 0 10px 24px rgba(0, 0, 0, .4), inset 0 1px 0 rgba(255, 255, 255, .1); }
+    .nav-actions .icon-button:hover, .nav-actions .icon-button:focus-visible { color: #071524; background: linear-gradient(145deg, #ffd98a, #e5b968 45%, #ed8130); border-color: #ffcf87; transform: translateY(-4px) scale(1.08); box-shadow: 0 14px 30px rgba(229, 185, 104, .45), inset 0 1px 0 rgba(255, 255, 255, .4); outline: none; }
+    .nav-actions .icon-button:active { transform: scale(.9); box-shadow: 0 4px 12px rgba(229, 185, 104, .3); }
+    .menu-toggle i { animation: burgerPop .5s cubic-bezier(.18, 1.5, .4, 1); }
+    @keyframes burgerPop { 0% { transform: scale(0) rotate(-150deg); opacity: 0; } 100% { transform: scale(1) rotate(0); opacity: 1; } }
+    .menu-toggle.open { border-color: #ffad67; box-shadow: 0 0 0 5px rgba(237, 129, 48, .16), 0 12px 26px rgba(0, 0, 0, .45); }
+
+    /* ---------- Modern search bar ---------- */
+    .search-box { border-color: rgba(229, 185, 104, .42); background: rgba(8, 20, 34, .6); box-shadow: 0 12px 30px rgba(0, 0, 0, .35), inset 0 1px 0 rgba(255, 255, 255, .07); }
+    .search-box:focus-within { border-color: #ffcf87; background: rgba(10, 26, 44, .8); box-shadow: 0 0 0 4px rgba(229, 185, 104, .14), 0 18px 40px rgba(0, 0, 0, .5); }
+    .search-box i { color: var(--gold); transition: transform .45s cubic-bezier(.2, .8, .2, 1), color .3s ease; }
+    .search-box:focus-within i { transform: scale(1.18) rotate(-14deg); color: #ffcf87; }
+
+    /* ================= LIVE BACKGROUND v2 ================= */
+    .bg-aurora-a { opacity: .2; }
+    .bg-aurora-b { opacity: .17; }
+    .bg-aurora-c { top: 18%; left: 12%; width: 90vmax; height: 90vmax; opacity: .1; background: radial-gradient(circle at 50% 50%, rgba(255, 126, 195, .38), transparent 55%); transform: none; }
+    .bg-grid { position: fixed; inset: -40px 0; z-index: -3; pointer-events: none; background-image: radial-gradient(rgba(229, 185, 104, .14) 1.1px, transparent 1.1px), radial-gradient(rgba(235, 126, 44, .08) .9px, transparent .9px); background-position: 0 0, 14px 16px; background-size: 30px 30px, 46px 46px; opacity: .55; will-change: transform; }
+    .bg-glow { position: fixed; left: 50%; top: 45%; z-index: -3; width: 75vmax; height: 75vmax; border-radius: 50%; pointer-events: none; background: radial-gradient(circle, rgba(237, 129, 48, .17), rgba(229, 185, 104, .07) 45%, transparent 65%); filter: blur(55px); opacity: 0; transform: translate(-50%, -50%) scale(.8); transition: opacity .7s ease, transform .7s ease; }
+    body.is-scrolled .bg-glow { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+    body.bg-fast .bg-glow { opacity: 1; transform: translate(-50%, -50%) scale(1.28); transition: transform .25s ease; }
+    .scroll-progress { background: linear-gradient(90deg, #e5b968, #ed8130 60%, #ff9b4a); box-shadow: 0 0 16px rgba(237, 129, 48, .9), 0 0 4px rgba(255, 207, 135, .9); }
+
+    /* ================= PREMIUM CENTERED HEADER ================= */
+    .site-header, .site-header.scrolled { position: sticky; background: linear-gradient(180deg, rgba(15, 40, 66, .98) 0%, rgba(9, 24, 44, .97) 55%, rgba(6, 17, 31, .98) 100%); border-bottom: 1px solid transparent; border-image: linear-gradient(90deg, transparent, rgba(229, 185, 104, .85), #ffcf87, rgba(229, 185, 104, .85), transparent) 1; box-shadow: 0 14px 38px rgba(0, 0, 0, .42); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); }
+    .site-header::after { content: ""; position: absolute; top: 0; left: 50%; width: min(640px, 82vw); height: 130px; transform: translateX(-50%); background: radial-gradient(ellipse at 50% 0%, rgba(229, 185, 104, .2), transparent 70%); pointer-events: none; }
+    .nav-wrap { position: relative; min-height: 108px; }
+    .site-header.scrolled .nav-wrap { min-height: 76px; }
+    .brand { flex: 1 1 0; min-width: 0; gap: .65rem; }
+    .brand-copy { display: grid; gap: .18rem; }
+    .brand-latin { color: #f2d9a4; font-size: .62rem; font-weight: 700; letter-spacing: .3em; line-height: 1.3; text-transform: uppercase; white-space: nowrap; text-shadow: 0 1px 8px rgba(229, 185, 104, .35); }
+    .brand-mark { width: 62px; height: 62px; }
+    .brand:hover .brand-mark { transform: rotate(-8deg) scale(1.08); }
+
+    /* ---------- Centered hero brand logo ---------- */
+    .brand-center { position: absolute; top: 50%; left: 50%; z-index: 1; display: grid; place-items: center; padding: .35rem 1.1rem; transform: translate(-50%, -50%); }
+    .brand-center::before { content: ""; position: absolute; width: 210px; height: 68px; border-radius: 50%; background: rgba(229, 185, 104, .14); filter: blur(26px); }
+    .brand-main-logo { position: relative; height: 86px; width: auto; display: block; object-fit: contain; filter: brightness(0) saturate(100%) invert(76%) sepia(31%) saturate(750%) hue-rotate(358deg) brightness(95%) contrast(88%) drop-shadow(0 6px 18px rgba(229, 185, 104, .4)); transition: transform .5s cubic-bezier(.2, .8, .2, 1), filter .5s ease; }
+    .brand-center:hover .brand-main-logo { transform: scale(1.07) translateY(-2px); filter: brightness(0) saturate(100%) invert(80%) sepia(38%) saturate(820%) hue-rotate(356deg) brightness(102%) contrast(92%) drop-shadow(0 10px 30px rgba(237, 129, 48, .6)); }
+    .site-header.scrolled .brand-main-logo { height: 60px; }
+
+    /* ---------- Balanced right actions ---------- */
+    .nav-actions { flex: 1 1 0; justify-content: flex-end; }
+    .nav-actions .icon-button { width: 50px; height: 50px; }
+
+    /* ---------- Premium search bar ---------- */
+    .search-panel { margin-top: 1.3rem; }
+    .search-box { max-width: 720px; padding: .95rem 1rem .95rem 1.35rem; border: 1px solid rgba(229, 185, 104, .5); border-radius: 999px; background: linear-gradient(160deg, rgba(17, 42, 68, .88), rgba(8, 20, 34, .78)); box-shadow: 0 16px 38px rgba(0, 0, 0, .4), inset 0 1px 0 rgba(255, 255, 255, .08); }
+    .search-box:focus-within { border-color: #ffcf87; background: linear-gradient(160deg, rgba(22, 52, 84, .92), rgba(10, 26, 44, .84)); box-shadow: 0 0 0 4px rgba(229, 185, 104, .16), 0 22px 46px rgba(0, 0, 0, .55); }
+    .search-box i { font-size: 1.02rem; }
+    .search-box input { font-size: 1.02rem; letter-spacing: .02em; }
+    .search-box input::placeholder { color: rgba(240, 220, 175, .55); }
+
+    /* ---------- Responsive ---------- */
+    @media (max-width: 767px) {
+      .nav-wrap { min-height: 92px; }
+      .site-header.scrolled .nav-wrap { min-height: 68px; }
+      .brand-mark { width: 46px; height: 46px; }
+      .brand-latin { font-size: .5rem; letter-spacing: .18em; }
+      .brand-main-logo { height: 58px; }
+      .brand-center { padding: .3rem .6rem; }
+      .brand-center::before { width: 150px; height: 48px; }
+      .site-header.scrolled .brand-main-logo { height: 44px; }
+      .nav-actions .icon-button { width: 43px; height: 43px; }
+      .search-box { padding: .8rem .85rem .8rem 1.1rem; }
+      .search-box, .search-box input { font-size: .95rem; }
+    }
+    @media (max-width: 420px) {
+      .brand-copy { display: none; }
+      .brand-main-logo { height: 50px; }
+      .brand-mark { width: 40px; height: 40px; }
+    }
+
+    /* ================= ROUND 5 — logo pairing + unified toggle ================= */
+    /* Cowboy profile logo: no circle border, clean image only */
+    .brand-mark { width: 56px; height: 66px; padding: 0; border: 0; border-radius: 0; background: transparent; box-shadow: none; }
+    .brand-mark img { width: 100%; height: 100%; border-radius: 0; object-fit: contain; }
+    .site-header.scrolled .brand-mark { width: 46px; height: 54px; }
+
+    /* Arabic text logo moves right next to the profile logo */
+    .brand { flex: 0 0 auto; gap: .45rem; }
+    .brand-copy { display: none; }
+    .brand-center { position: static; flex: 0 0 auto; transform: none; padding: 0; margin-inline-start: .3rem; }
+    .brand-center::before { display: none; }
+    .brand-main-logo { height: 60px; filter: brightness(0) saturate(100%) invert(76%) sepia(31%) saturate(750%) hue-rotate(358deg) brightness(95%) contrast(88%) drop-shadow(0 3px 12px rgba(229, 185, 104, .35)); }
+    .site-header.scrolled .brand-main-logo { height: 46px; }
+    .brand:hover .brand-main-logo, .brand-center:hover .brand-main-logo { transform: scale(1.06) translateY(-2px); }
+
+    /* Menu open/close button: same colors in both states */
+    .menu-toggle.open, .menu-toggle.open:focus-visible { color: #f2d9a4; border-color: rgba(229, 185, 104, .5); background: rgba(8, 20, 34, .62); box-shadow: 0 10px 24px rgba(0, 0, 0, .4), inset 0 1px 0 rgba(255, 255, 255, .1); }
+    .menu-toggle.open:hover, .menu-toggle.open:focus-visible:hover { color: #071524; background: linear-gradient(145deg, #ffd98a, #e5b968 45%, #ed8130); border-color: #ffcf87; }
+
+    @media (max-width: 767px) {
+      .brand-mark { width: 42px; height: 50px; }
+      .brand-main-logo { height: 46px; }
+      .site-header.scrolled .brand-mark { width: 38px; height: 45px; }
+      .site-header.scrolled .brand-main-logo { height: 40px; }
+    }
+
+    /* ================= 3D CAFE PHOTO SLIDER ================= */
+    .cafe-slider { position: relative; margin-top: 2.2rem; padding: .5rem 0 2.6rem; overflow: hidden; }
+    .slider-stage { position: relative; height: clamp(215px, 33vw, 380px); perspective: 1300px; }
+    .slide { position: absolute; top: 0; left: 19%; width: 62%; height: 100%; margin: 0; transform-style: preserve-3d; transition: transform .95s cubic-bezier(.22, .8, .25, 1), opacity .95s ease, filter .95s ease; }
+    .slide img { width: 100%; height: 100%; display: block; object-fit: cover; border-radius: 20px; border: 1px solid rgba(229, 185, 104, .45); box-shadow: 0 26px 60px rgba(0, 0, 0, .55); }
+    .slide.is-active { transform: translate3d(0, 0, 60px) scale(1); opacity: 1; z-index: 3; }
+    .slide.is-active img { border-color: rgba(255, 207, 135, .8); box-shadow: 0 30px 70px rgba(0, 0, 0, .6), 0 0 42px rgba(229, 185, 104, .22), inset 0 0 0 1px rgba(255, 207, 135, .25); }
+    .slide.is-prev { transform: translate3d(-62%, 0, -160px) rotateY(38deg) scale(.82); opacity: .55; z-index: 2; filter: saturate(.85) brightness(.72); }
+    .slide.is-next { transform: translate3d(62%, 0, -160px) rotateY(-38deg) scale(.82); opacity: .55; z-index: 2; filter: saturate(.85) brightness(.72); }
+    .slide.is-far { transform: translate3d(0, 40px, -320px) scale(.55); opacity: 0; z-index: 1; pointer-events: none; }
+    .slider-caption { position: absolute; left: 50%; bottom: 2.1rem; z-index: 4; transform: translateX(-50%); display: flex; align-items: center; gap: .55rem; padding: .42rem 1.15rem; border: 1px solid rgba(229, 185, 104, .4); border-radius: 999px; color: #f2d9a4; background: rgba(7, 19, 34, .72); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); font-size: .72rem; font-weight: 700; letter-spacing: .14em; white-space: nowrap; box-shadow: 0 10px 26px rgba(0, 0, 0, .45); }
+    .slider-caption-ar { direction: rtl; font-family: "Cairo", sans-serif; font-size: .86rem; color: #ffcf87; }
+    .slider-caption-dot { color: rgba(229, 185, 104, .6); }
+    .slider-nav { position: absolute; top: 42%; z-index: 5; width: 44px; height: 44px; display: grid; place-items: center; border: 1px solid rgba(229, 185, 104, .5); border-radius: 50%; color: #f2d9a4; background: rgba(8, 20, 34, .6); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); box-shadow: 0 10px 24px rgba(0, 0, 0, .4); opacity: 0; transition: opacity .35s ease, transform .35s cubic-bezier(.2, .8, .2, 1), background .3s ease, color .3s ease; }
+    .cafe-slider:hover .slider-nav, .slider-nav:focus-visible { opacity: 1; }
+    .slider-prev { left: clamp(.6rem, 4vw, 2.4rem); }
+    .slider-next { right: clamp(.6rem, 4vw, 2.4rem); }
+    .slider-nav:hover { color: #071524; background: linear-gradient(145deg, #ffd98a, #e5b968 45%, #ed8130); border-color: #ffcf87; transform: scale(1.1); }
+    .slider-nav:active { transform: scale(.92); }
+    .slider-dots { position: absolute; right: 0; bottom: 1.05rem; left: 0; z-index: 4; display: flex; justify-content: center; gap: .5rem; }
+    .slider-dot { width: 9px; height: 9px; padding: 0; border: 1px solid rgba(229, 185, 104, .55); border-radius: 999px; background: rgba(229, 185, 104, .18); cursor: pointer; transition: width .4s cubic-bezier(.2, .8, .2, 1), background .3s ease, box-shadow .3s ease; }
+    .slider-dot:hover { background: rgba(229, 185, 104, .45); }
+    .slider-dot.active { width: 26px; background: linear-gradient(90deg, #e5b968, #ed8130); box-shadow: 0 0 14px rgba(237, 129, 48, .6); }
+    @media (max-width: 767px) {
+      .cafe-slider { margin-top: 1.4rem; padding-bottom: 2.2rem; }
+      .slide { left: 14%; width: 72%; }
+      .slide.is-prev { transform: translate3d(-72%, 0, -140px) rotateY(30deg) scale(.78); }
+      .slide.is-next { transform: translate3d(72%, 0, -140px) rotateY(-30deg) scale(.78); }
+      .slider-nav { opacity: 1; width: 38px; height: 38px; }
+      .slider-caption { font-size: .62rem; padding: .35rem .9rem; bottom: 1.7rem; }
+    }
+
+    /* ================= SLIDER v2 — FLAT LANDSCAPE + POWER ON/OFF ================= */
+    .slider-stage { perspective: none; height: clamp(205px, 31vw, 410px); }
+    .slide { left: 0; width: 100%; height: 100%; transform-style: flat; opacity: 0; visibility: hidden; transform: none; filter: none; transition: none; }
+    .slide.is-active { visibility: visible; z-index: 3; opacity: 1; animation: tvOn .85s cubic-bezier(.2, .8, .2, 1) both; }
+    .slide.is-prev, .slide.is-next, .slide.is-far { opacity: 0; visibility: hidden; transform: none; filter: none; }
+    .slide.is-out { visibility: visible; z-index: 2; animation: tvOff .6s ease-in both; }
+    @keyframes tvOn {
+      0% { opacity: 0; transform: scaleY(.006) scaleX(.65); filter: brightness(0); }
+      30% { opacity: 1; transform: scaleY(.02) scaleX(.9); filter: brightness(2.6); }
+      55% { transform: scaleY(1) scaleX(1); filter: brightness(1.7); }
+      100% { opacity: 1; transform: none; filter: brightness(1); }
+    }
+    @keyframes tvOff {
+      0% { opacity: 1; transform: none; filter: brightness(1); }
+      55% { opacity: 1; transform: scaleY(.012) scaleX(.85); filter: brightness(2.4); }
+      100% { opacity: 0; transform: scaleY(.002) scaleX(.35); filter: brightness(4); }
+    }
+    .slide img { border-radius: 22px; cursor: grab; }
+    .slide img:active { cursor: grabbing; }
+    .slider-nav { opacity: 1; }
+    .cafe-slider:hover .slide.is-active img { transform: scale(1.012); transition: transform .6s cubic-bezier(.2, .8, .2, 1); }
+    @media (prefers-reduced-motion: reduce) { .slide.is-active, .slide.is-out { animation: none; } }
+    @media (max-width: 767px) {
+      .slider-stage { height: clamp(170px, 52vw, 260px); }
+      .slide { left: 0; width: 100%; }
+    }
+
+    /* ================= SLIDER v3 — BORDERLESS DIGITAL, IMAGES ONLY ================= */
+    .cafe-slider { padding-bottom: 1.5rem; }
+    .slide img { border: 0; border-radius: 14px; box-shadow: 0 22px 55px rgba(0, 0, 0, .6); }
+    .slide.is-active img { border: 0; box-shadow: 0 28px 64px rgba(0, 0, 0, .68), 0 0 46px rgba(229, 185, 104, .1); }
+    .slider-caption { display: none; }
+    .slider-dots { bottom: .2rem; }
+    .slider-nav { width: 40px; height: 40px; font-size: .85rem; border-color: rgba(229, 185, 104, .35); background: rgba(6, 16, 29, .5); }
+    .slider-prev { left: clamp(.4rem, 2.5vw, 1.6rem); }
+    .slider-next { right: clamp(.4rem, 2.5vw, 1.6rem); }
+    .slider-stage::after { content: ""; position: absolute; inset: 0; z-index: 4; pointer-events: none; border-radius: 14px; box-shadow: inset 0 -40px 60px -30px rgba(4, 12, 22, .55); }
+
+    /* ================= SLIDER v4 — SOFT FADE, CLICK-TO-NEXT, NO ARROWS ================= */
+    .slide.is-active { animation: slideFadeIn .95s ease both; }
+    .slide.is-out { animation: slideFadeOut .65s ease both; }
+    @keyframes slideFadeIn { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes slideFadeOut { from { opacity: 1; } to { opacity: 0; } }
+    .slider-nav { display: none; }
+    .slide img { cursor: pointer; }
+
+    /* ================= SLIDER v5 — NO SHADOW LINE UNDER PHOTO ================= */
+    .slider-stage::after { display: none; }
+    .slide img, .slide.is-active img { box-shadow: none; }
+
+    /* ================= DRAWER v2 — FULL-SCREEN MENU ON MOBILE ================= */
+    @media (max-width: 767.98px) {
+      .mobile-menu { justify-content: stretch; background: rgba(3, 12, 20, .82); }
+      .mobile-menu-panel { width: 100vw; max-width: 100vw; height: 100vh; height: 100dvh; border-left: 0; border-radius: 0; padding: 1.5rem 1.2rem calc(2.2rem + env(safe-area-inset-bottom)); transform: none; scale: 1.045; opacity: 0; transition: scale .52s cubic-bezier(.16, .84, .3, 1), opacity .38s ease; }
+      .mobile-menu.open .mobile-menu-panel { scale: 1; opacity: 1; box-shadow: none; }
+      .mobile-menu-panel::before { display: none; }
+      .mobile-menu-links { gap: .45rem; margin-top: 1.7rem; }
+      .mobile-menu-link { padding: .82rem .85rem; font-size: 1.06rem; }
+      .mobile-menu-link:hover, .mobile-menu-link.active { transform: none; }
+    }
+
+    /* ================= DRAWER v3 — LANGUAGE + CLOSE MATCH HAMBURGER ================= */
+    .mobile-menu-panel .icon-button { width: 50px; height: 50px; border: 1px solid rgba(229, 185, 104, .5); color: #f2d9a4; background: rgba(8, 20, 34, .62); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); box-shadow: 0 10px 24px rgba(0, 0, 0, .4), inset 0 1px 0 rgba(255, 255, 255, .1); }
+    @media (max-width: 767px) { .mobile-menu-panel .icon-button { width: 43px; height: 43px; } }
+    .mobile-menu-panel .icon-button:hover, .mobile-menu-panel .icon-button:focus-visible { color: #071524; background: linear-gradient(145deg, #ffd98a, #e5b968 45%, #ed8130); border-color: #ffcf87; transform: translateY(-4px) scale(1.08); box-shadow: 0 14px 30px rgba(229, 185, 104, .45), inset 0 1px 0 rgba(255, 255, 255, .4); outline: none; }
+    .mobile-menu-panel .icon-button:active { transform: scale(.9); box-shadow: 0 4px 12px rgba(229, 185, 104, .3); }
+    .mobile-menu-panel .language-picker.open .icon-button { color: #071524; background: linear-gradient(145deg, #ffd98a, #e5b968 45%, #ed8130); border-color: #ffcf87; }
+    .mobile-menu-panel .language-options { border-color: rgba(229, 185, 104, .45); background: rgba(8, 20, 34, .92); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); box-shadow: 0 18px 40px rgba(0, 0, 0, .55), inset 0 1px 0 rgba(255, 255, 255, .08); }
+    .mobile-menu-panel .language-option { color: #f2d9a4; }
+    .mobile-menu-panel .language-option:hover, .mobile-menu-panel .language-option.active { color: #071524; background: linear-gradient(145deg, #ffd98a, #e5b968 55%, #ed8130); }
+
+    /* ================= INTRO v2 — LANGUAGE PILLS MATCH HAMBURGER GLASS/GOLD ================= */
+    .intro-language { color: #f2d9a4; border-color: rgba(229, 185, 104, .5); background: rgba(8, 20, 34, .62); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); box-shadow: 0 10px 24px rgba(0, 0, 0, .4), inset 0 1px 0 rgba(255, 255, 255, .1); }
+    .intro-language:hover, .intro-language:focus-visible { color: #071524; background: linear-gradient(145deg, #ffd98a, #e5b968 45%, #ed8130); border-color: #ffcf87; transform: translateY(-2px); box-shadow: 0 14px 30px rgba(229, 185, 104, .45), inset 0 1px 0 rgba(255, 255, 255, .4); outline: none; }
+    .intro-language.active { color: #071524; background: linear-gradient(145deg, #ffd98a, #e5b968 45%, #ed8130); border-color: #ffcf87; }
+    .intro-language:active { transform: scale(.94); }
+
+    /* ================= DRAWER v4 — GOLD TEXT INSIDE MENU ================= */
+    .mobile-menu-link, .mobile-menu-link span { color: #f2d9a4; }
+    .mobile-menu-link:hover, .mobile-menu-link.active, .mobile-menu-link:hover span, .mobile-menu-link.active span { color: #fff4e8; }
+    .mobile-menu-brand-copy strong { color: #e5b968; }
+    .mobile-menu-brand-copy span, .mobile-menu-head p { color: rgba(229, 185, 104, .65); }
+
+    /* ================= GOLD TEXT v1 — THEME ACCENT BLUE -> GOLD EVERYWHERE ================= */
+    :root { --gold: #e5b968; }
+    .category-link { color: #f2d9a4; }
+    .section-heading p { color: rgba(229, 185, 104, .78); }
+    .view-label { color: #e5b968; }
+    .modal-category { color: #e5b968; }
+
+    /* ================= SLIDER v6 — LIVE GOO LINE UNDER PHOTO ================= */
+    .slider-dots::before { content: ""; position: absolute; top: -.5rem; left: 7%; right: 7%; height: 3px; border-radius: 999px; background: linear-gradient(90deg, transparent, rgba(229, 185, 104, .18) 10%, rgba(255, 217, 138, .55) 50%, rgba(229, 185, 104, .18) 90%, transparent); background-size: 220% 100%; animation: gooTrack 5s linear infinite; }
+    .slider-dots::after { content: ""; position: absolute; top: calc(-.5rem - 1.5px); left: 7%; width: 24%; height: 6px; border-radius: 999px; background: linear-gradient(90deg, transparent, #ffd98a 30%, #ed8130 55%, transparent); filter: blur(1px) drop-shadow(0 0 8px rgba(237, 129, 48, .75)); animation: gooRun 3.4s ease-in-out infinite alternate; will-change: transform; }
+    @keyframes gooTrack { from { background-position: 110% 0; } to { background-position: -110% 0; } }
+    @keyframes gooRun { from { transform: translateX(0) scaleX(1); } 50% { transform: translateX(128%) scaleX(1.3); } to { transform: translateX(255%) scaleX(1); } }
+    @media (prefers-reduced-motion: reduce) { .slider-dots::before, .slider-dots::after { animation: none; } }
+
+    /* ================= GOO LINES v2 — SECTION LINES MATCH THE GOO STYLE ================= */
+    .menu-section::before, .view-label::before { border-radius: 999px; background: linear-gradient(90deg, transparent, rgba(229, 185, 104, .35) 12%, rgba(255, 217, 138, .8) 50%, rgba(229, 185, 104, .35) 88%, transparent); background-size: 220% 100%; box-shadow: 0 0 10px rgba(237, 129, 48, .28); }
+    .menu-section::before { height: 3px; animation: lineReveal .8s both .15s, gooTrack 5s linear infinite 1s; }
+    .view-label::before { width: 34px; height: 3px; animation: gooTrack 3.8s ease-in-out infinite alternate; }
+    @media (prefers-reduced-motion: reduce) { .menu-section::before, .view-label::before { animation: none; } }
+
+    /* ================= GOO LINES v3 — HEADER HAIRLINE GOO ================= */
+    .site-header::before { content: ""; position: absolute; z-index: 1; right: 0; bottom: -1.5px; left: 0; height: 3px; pointer-events: none; background: linear-gradient(90deg, transparent, #ffd98a 40%, #ed8130 60%, transparent) 0 0 / 30% 100% no-repeat, linear-gradient(90deg, transparent, rgba(229, 185, 104, .3) 12%, rgba(255, 217, 138, .6) 50%, rgba(229, 185, 104, .3) 88%, transparent) 0 0 / 220% 100%; filter: drop-shadow(0 0 6px rgba(237, 129, 48, .55)); animation: gooHeader 4.5s ease-in-out infinite alternate; will-change: background-position; }
+    @keyframes gooHeader { from { background-position: 0% 0, 110% 0; } to { background-position: 100% 0, -110% 0; } }
+    @media (prefers-reduced-motion: reduce) { .site-header::before { animation: none; } }
+
+    /* ================= GOO LINES v4 — SEARCH PILL GOO RING (circle, not line) ================= */
+    @property --goo-a { syntax: "<angle>"; inherits: false; initial-value: 0deg; }
+    .search-box { position: relative; }
+    .search-box::after { display: none; }
+    .search-box::before { content: ""; position: absolute; z-index: -1; top: -2.5px; right: -2.5px; bottom: -2.5px; left: -2.5px; padding: 2.5px; border-radius: 999px; background: conic-gradient(from var(--goo-a), rgba(229, 185, 104, .08) 0deg, rgba(229, 185, 104, .08) 285deg, #e5b968 318deg, #ffd98a 338deg, #ed8130 350deg, rgba(229, 185, 104, .08) 360deg); -webkit-mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0); mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0); filter: drop-shadow(0 0 4px rgba(237, 129, 48, .3)); animation: gooRing 5s ease-in-out infinite alternate; will-change: --goo-a; }
+    @keyframes gooRing { to { --goo-a: 360deg; } }
+    @media (prefers-reduced-motion: reduce) { .search-box::before { animation: none; } }
+
+    /* ================= GOO RINGS v2 — HAMBURGER + SEARCH ICON BUTTONS ================= */
+    .nav-actions .icon-button::after { content: ""; position: absolute; inset: 0; z-index: 1; pointer-events: none; border-radius: 50%; padding: 2px; background: conic-gradient(from var(--goo-a), rgba(229, 185, 104, .1) 0deg, rgba(229, 185, 104, .1) 285deg, #e5b968 318deg, #ffd98a 338deg, #ed8130 350deg, rgba(229, 185, 104, .1) 360deg); -webkit-mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0); mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0); animation: gooRing 5s ease-in-out infinite alternate; will-change: --goo-a; }
+    .nav-actions #focusSearch::after { animation-delay: -2.5s; }
+    @media (prefers-reduced-motion: reduce) { .nav-actions .icon-button::after { animation: none; } }
+
+    /* ================= INTRO v3 — GOO RINGS ON INTRO CONTROLS ================= */
+    .intro-language { position: relative; }
+    .intro-language::before { content: ""; position: absolute; inset: -1.5px; z-index: 1; pointer-events: none; border-radius: 999px; padding: 1.5px; background: conic-gradient(from var(--goo-a), rgba(229, 185, 104, .12) 0deg, rgba(229, 185, 104, .12) 285deg, #e5b968 318deg, #ffd98a 338deg, #ed8130 350deg, rgba(229, 185, 104, .12) 360deg); -webkit-mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0); mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0); animation: gooRing 5s ease-in-out infinite alternate; will-change: --goo-a; }
+    .intro-language:nth-child(2)::before { animation-delay: -1.6s; }
+    .intro-language:nth-child(3)::before { animation-delay: -3.2s; }
+    .intro-open::before { content: ""; position: absolute; inset: 0; z-index: 1; pointer-events: none; border-radius: 999px; padding: 2px; background: conic-gradient(from var(--goo-a), rgba(255, 244, 214, .18) 0deg, rgba(255, 244, 214, .18) 285deg, #ffd98a 318deg, #fff0cf 338deg, #ed8130 350deg, rgba(255, 244, 214, .18) 360deg); -webkit-mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0); mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0); animation: gooRing 5s ease-in-out infinite alternate; will-change: --goo-a; }
+    .intro-socials a::after { content: ""; position: absolute; inset: -1.5px; pointer-events: none; border-radius: 50%; padding: 1.5px; background: conic-gradient(from var(--goo-a), transparent 0deg, transparent 278deg, currentColor 318deg, currentColor 352deg, transparent 360deg); -webkit-mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0); mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0); opacity: .95; animation: gooRing 5s ease-in-out infinite alternate; will-change: --goo-a; }
+    .intro-socials a:nth-child(2)::after { animation-delay: -1.6s; }
+    .intro-socials a:nth-child(3)::after { animation-delay: -3.2s; }
+    @media (prefers-reduced-motion: reduce) { .intro-language::before, .intro-open::before, .intro-socials a::after { animation: none; } }
+
+    /* ================= BG SCROLL ENGINE v2 — FULL SCROLL-REACTIVE BACKGROUND ================= */
+    .bg-scroll-fx { position: fixed; inset: 0; z-index: -2; overflow: hidden; pointer-events: none; }
+    .bg-swirl { position: absolute; left: 50%; width: 92vmax; height: 92vmax; border-radius: 50%; filter: blur(85px); will-change: transform, opacity; }
+    .bg-swirl-a { top: -34vmax; background: conic-gradient(from 0deg, transparent 8%, rgba(229, 185, 104, .38) 30%, transparent 48%, rgba(237, 129, 48, .3) 68%, transparent 88%); transform: translate(-50%, calc(var(--sp, 0) * 58vh)) rotate(calc(var(--sp, 0) * 260deg)); opacity: calc(.1 + var(--sv, 0) * .24); }
+    .bg-swirl-b { bottom: -34vmax; background: conic-gradient(from 180deg, transparent 8%, rgba(53, 117, 185, .35) 32%, transparent 52%, rgba(143, 56, 23, .3) 72%, transparent 90%); transform: translate(-50%, calc(var(--sp, 0) * -58vh)) rotate(calc(var(--sp, 0) * -260deg)); opacity: calc(.1 + var(--sv, 0) * .24); }
+    .bg-stars, .bg-stars-far { position: absolute; top: 0; left: 0; width: 2px; height: 2px; border-radius: 50%; will-change: transform, opacity; }
+    .bg-stars-far { transform: translateY(calc(var(--sp, 0) * -130px)); opacity: calc(.3 + var(--sv, 0) * .45); }
+    .bg-stars { transform: translateY(calc(var(--sp, 0) * -280px)); opacity: calc(.5 + var(--sv, 0) * .5); }
+    .bg-speed { position: absolute; inset: 0; background: radial-gradient(ellipse at 50% 50%, transparent 56%, rgba(229, 185, 104, .14) 88%, rgba(237, 129, 48, .1) 100%); opacity: var(--sv, 0); }
+
+    /* ================= BACK-TOP v2 — MATCH HAMBURGER GLASS/GOLD ================= */
+    .back-top { border: 1px solid rgba(229, 185, 104, .5); color: #f2d9a4; background: rgba(8, 20, 34, .62); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); box-shadow: 0 10px 24px rgba(0, 0, 0, .4), inset 0 1px 0 rgba(255, 255, 255, .1); }
+    .back-top:hover, .back-top:focus-visible { color: #071524; background: linear-gradient(145deg, #ffd98a, #e5b968 45%, #ed8130); border-color: #ffcf87; box-shadow: 0 14px 30px rgba(229, 185, 104, .45), inset 0 1px 0 rgba(255, 255, 255, .4); transform: translateY(-4px) scale(1.06); outline: none; }
+    .back-top:active { transform: scale(.9); }
+  </style>
 </head>
   <body class="intro-active">
   <div class="scroll-progress" id="scrollProgress" aria-hidden="true"></div>
   <div class="loader" id="loader" aria-label="Loading menu">
-    <video class="loader-video" src="bg vid.MP4" autoplay muted loop playsinline preload="metadata" aria-hidden="true"></video><div class="loader-inner"><img class="loader-logo" src="salim_shoras-removebg-preview.png" alt="Shorash Moradi Cafe logo"><img class="loader-arabic-logo" src="Shorash 1.png" alt="Shorash Moradi Arabic logo"><div class="intro-languages" aria-label="Choose language"><button class="intro-language" type="button" data-intro-language="en">English</button><button class="intro-language" type="button" data-intro-language="ar">العربية</button><button class="intro-language" type="button" data-intro-language="ku">Badînî</button></div><button class="intro-open" id="introOpen" type="button">Open Menu</button><button class="intro-audio-button" id="introAudioButton" type="button" hidden>Play intro sound</button><audio id="introAudio" src="Intro shorash.mp3" preload="auto" autoplay></audio></div>
+    <video class="loader-video" src="bg vid.MP4" autoplay muted loop playsinline preload="metadata" aria-hidden="true"></video><div class="loader-inner"><img class="loader-logo" src="salim_shoras-removebg-preview.png" alt="Shorash Moradi Cafe logo"><img class="loader-arabic-logo" src="Shorash 1.png" alt="Shorash Moradi Arabic logo"><div class="intro-languages" aria-label="Choose language"><button class="intro-language" type="button" data-intro-language="en">English</button><button class="intro-language" type="button" data-intro-language="ar">العربية</button><button class="intro-language" type="button" data-intro-language="ku">Badînî</button></div><button class="intro-open" id="introOpen" type="button">Open Menu</button><button class="intro-audio-button" id="introAudioButton" type="button" hidden>Play intro sound</button><div class="socials intro-socials" aria-label="Social media links"><a href="https://www.instagram.com/shorashmoradicafe?stkn=MWowNnR3MjVtcG9wdw==" target="_blank" rel="noopener" aria-label="Instagram"><i class="fa-brands fa-instagram" aria-hidden="true"></i></a><a href="https://snapchat.com/t/esK6zurJ" target="_blank" rel="noopener" aria-label="Snapchat"><i class="fa-brands fa-snapchat-ghost" aria-hidden="true"></i></a><a href="https://www.tiktok.com/@shorashmoradicafe?_r=1&amp;_t=ZS-9AAboghbio1" target="_blank" rel="noopener" aria-label="TikTok"><i class="fa-brands fa-tiktok" aria-hidden="true"></i></a></div><audio id="introAudio" src="Intro shorash.mp3" preload="auto" autoplay></audio></div>
   </div>
   <header class="site-header">
     <div class="container nav-wrap">
-      <a class="brand" href="#top" aria-label="Shorash Moradi Cafe home"><span class="brand-mark"><img src="salim_shoras-removebg-preview.png" alt="Shorash Moradi Cafe logo"></span><span class="brand-mark brand-mark-secondary"><img src="Shorash 1.png" alt="Shorash Moradi Arabic logo"></span></a>
+      <a class="brand" href="#top" aria-label="Shorash Moradi Cafe home"><span class="brand-mark"><img src="salim_shoras-removebg-preview.png" alt="Shorash Moradi Cafe logo"></span><span class="brand-copy"><span class="brand-latin">Shorash Moradi Café</span></span></a>
+      <a class="brand-center" href="#top" aria-label="Shorash Moradi Cafe — home"><img class="brand-main-logo" src="Shorash 1.png" alt="Shorash Moradi Arabic logo"></a>
       <div class="nav-actions">
         <button class="icon-button menu-toggle" id="menuToggle" type="button" aria-label="Open menu" aria-expanded="false" title="Open menu"><i class="fa-solid fa-bars" aria-hidden="true"></i></button>
         <button class="icon-button" id="focusSearch" type="button" aria-label="Search menu" title="Search menu"><i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i></button>
@@ -348,16 +764,29 @@
     <form class="search-box" id="searchForm" role="search"><i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i><input id="searchInput" type="search" placeholder="Search the menu..." autocomplete="off" aria-label="Search menu items"><button class="clear-search" id="clearSearch" type="button" aria-label="Clear search"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button></form>
   </div>
 
+  <section class="cafe-slider" id="cafeSlider" aria-label="Shorash Moradi Cafe photos" aria-roledescription="carousel">
+    <div class="slider-stage">
+      <figure class="slide is-active"><img src="cafe-slide-1.jpg" alt="Shorash Moradi Cafe exterior at night" draggable="false"></figure>
+      <figure class="slide is-next"><img src="cafe-slide-2.jpg" alt="Shorash Moradi Cafe corner facade" draggable="false"></figure>
+      <figure class="slide is-prev"><img src="cafe-slide-3.jpg" alt="Shorash Moradi Cafe aerial night view" draggable="false"></figure>
+    </div>
+    <button class="slider-nav slider-prev" type="button" aria-label="Previous photo"><i class="fa-solid fa-chevron-left" aria-hidden="true"></i></button>
+    <button class="slider-nav slider-next" type="button" aria-label="Next photo"><i class="fa-solid fa-chevron-right" aria-hidden="true"></i></button>
+    <div class="slider-caption"><span class="slider-caption-ar">شورەش مۆرادی</span><span class="slider-caption-dot">•</span><span>Shorash Moradi Café</span></div>
+    <div class="slider-dots" role="tablist" aria-label="Choose photo"><button class="slider-dot active" type="button" role="tab" aria-selected="true" aria-label="Photo 1"></button><button class="slider-dot" type="button" role="tab" aria-selected="false" aria-label="Photo 2"></button><button class="slider-dot" type="button" role="tab" aria-selected="false" aria-label="Photo 3"></button></div>
+  </section>
+
   <nav class="category-bar" aria-label="Menu categories"><div class="container"><div class="category-scroll" id="categoryNav"></div></div></nav>
 
   <main class="container" id="menuContent"></main>
   <div class="container empty-state" id="emptyState"><i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i><h2 class="serif">No menu items found</h2><p>Try another search or browse our categories.</p></div>
 
-  <footer class="site-footer"><div class="container"><div class="footer-brand serif"><img class="footer-cowboy-logo" src="salim_shoras-removebg-preview.png" alt="Shorash Moradi logo"><img class="footer-logo footer-arabic-logo" src="Shorash 1.png" alt="Shorash Moradi Arabic logo"></div><p class="footer-copy mt-3 mb-0">Thank you for visiting us.</p><div class="socials" aria-label="Social media links"><a href="https://www.instagram.com/" target="_blank" rel="noopener" aria-label="Instagram"><i class="fa-brands fa-instagram" aria-hidden="true"></i></a><a href="#" aria-label="Snapchat"><i class="fa-brands fa-snapchat-ghost" aria-hidden="true"></i></a><a href="#" aria-label="TikTok"><i class="fa-brands fa-tiktok" aria-hidden="true"></i></a><a href="#" aria-label="WhatsApp"><i class="fa-brands fa-whatsapp" aria-hidden="true"></i></a></div><div class="footer-bottom"><span>© 2026 Shorash Moradi Café</span><span><a class="developer-link" href="https://www.instagram.com/sallimmustafaaa?stkn=MWpscXpjNTF2ZWpncg==" target="_blank" rel="noopener" aria-label="Visit Salim Mustefa on Instagram">Developed By Salim Mustefa</a><a class="admin-access" href="#admin" aria-label="Admin login" title="Admin login"><i class="fa-solid fa-lock" aria-hidden="true"></i></a></span></div></div></footer>
+  <footer class="site-footer"><div class="container"><div class="footer-brand serif"><img class="footer-cowboy-logo" src="salim_shoras-removebg-preview.png" alt="Shorash Moradi logo"><img class="footer-logo footer-arabic-logo" src="Shorash 1.png" alt="Shorash Moradi Arabic logo"></div><p class="footer-copy mt-3 mb-0">Thank you for visiting us.</p><div class="socials" aria-label="Social media links"><a href="https://www.instagram.com/shorashmoradicafe?stkn=MWowNnR3MjVtcG9wdw==" target="_blank" rel="noopener" aria-label="Instagram"><i class="fa-brands fa-instagram" aria-hidden="true"></i></a><a href="https://snapchat.com/t/esK6zurJ" target="_blank" rel="noopener" aria-label="Snapchat"><i class="fa-brands fa-snapchat-ghost" aria-hidden="true"></i></a><a href="https://www.tiktok.com/@shorashmoradicafe?_r=1&_t=ZS-9AAboghbio1" target="_blank" rel="noopener" aria-label="TikTok"><i class="fa-brands fa-tiktok" aria-hidden="true"></i></a><a href="#" aria-label="WhatsApp"><i class="fa-brands fa-whatsapp" aria-hidden="true"></i></a></div><div class="footer-bottom"><span>© 2026 Shorash Moradi Café</span><span><a class="developer-link" href="https://www.instagram.com/sallimmustafaaa?stkn=MWpscXpjNTF2ZWpncg==" target="_blank" rel="noopener" aria-label="Visit Salim Mustefa on Instagram">Developed By Salim Mustefa</a><a class="admin-access" href="#admin" aria-label="Admin login" title="Admin login"><i class="fa-solid fa-lock" aria-hidden="true"></i></a></span></div></div></footer>
 
   <button class="back-top" id="backTop" type="button" aria-label="Back to top" title="Back to top"><i class="fa-solid fa-arrow-up" aria-hidden="true"></i></button>
 
   <div class="modal fade" id="itemModal" tabindex="-1" aria-labelledby="modalTitle" aria-hidden="true"><div class="modal-dialog modal-dialog-centered modal-lg"><div class="modal-content"><button class="modal-close" type="button" data-bs-dismiss="modal" aria-label="Close item details"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button><img class="modal-image" id="modalImage" src="" alt=""><div class="modal-body"><div class="modal-category" id="modalCategory"></div><div class="modal-title-row"><h2 class="serif" id="modalTitle"></h2><div class="price" id="modalPrice"></div></div><p class="modal-description mt-3 mb-0" id="modalDescription"></p></div></div></div></div>
+  <div class="modal fade welcome-modal" id="welcomeModal" tabindex="-1" aria-labelledby="welcomeTitle" aria-describedby="welcomeCopy" aria-hidden="true"><div class="modal-dialog modal-dialog-centered"><div class="modal-content welcome-content"><button class="welcome-close" type="button" data-bs-dismiss="modal" aria-label="Close welcome message"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button><img class="welcome-logo" src="Shorash 1.png" alt="Shorash Moradi logo"><p class="welcome-kicker">Shorash Moradi Cafe</p><h2 class="welcome-title serif" id="welcomeTitle"></h2><p class="welcome-copy" id="welcomeCopy"></p><button class="welcome-action" type="button" data-bs-dismiss="modal" id="welcomeAction"></button></div></div></div>
 
   <section class="admin-view" id="adminView" aria-label="Admin dashboard">
     <div class="container admin-shell">
@@ -484,7 +913,7 @@
       "Hot Coffee": "مشروبات دافئة ومحضرة بعناية.", "Iced Coffee": "قهوة باردة ومنعشة.", "Red Bull": "طاقة منعشة ليومك.", "Bris Mojito": "مشروبات منعشة للمشاركة.", Milkshake: "كريمية ولذيذة وباردة.", Smoothie: "فواكه طازجة ممزوجة بنعومة.", "Iced Tea": "شاي بارد ومنعش.", Juice: "عصائر طبيعية ومشرقة.", Crepe: "حلويات مقهى محضرة حسب الطلب.", "Mini Pancake": "لقيمات صغيرة بطعم كبير.", Waffle: "ذهبية ومقرمشة ومناسبة للمشاركة.", Kunafa: "نهاية حلوة بلمسة محلية.", "Thai Doodorma": "أطباق شهية ومريحة.",
     };
     const categoryBadiniNames = { "Hot Coffee": "قەھوەیا گەرم", "Iced Coffee": "قەھوەیا سار", "Red Bull": "ڕێد بوڵ", "Bris Mojito": "بریس مۆجیتۆ", Milkshake: "میلک شەیک", Smoothie: "سمووتی", "Iced Tea": "چا یا سار", Juice: "شەربەت", Crepe: "کرێپ", "Mini Pancake": "پانکەیکی بچووک", Waffle: "وافل", Kunafa: "کونەفە", "Thai Doodorma": "تای دودورما" };
-    const categoryBadiniDescriptions = { "Hot Coffee": "ڤەخوارنێن گەرم و ب بالدارî هاتینە ئامادەکرن.", "Iced Coffee": "قەھوەیا سار و تازە.", "Red Bull": "ئەنەرژیەکا تازە ژ بۆ روژا تە.", Milkshake: "شیرین و کریمی، ب تامەکێ خۆش.", Smoothie: "فاکێنێن تازە، هاتینە تێکدان.", "Iced Tea": "چا یا سار و تازە.", Juice: "شەربەتێن سروشتی و تازە.", Kunafa: "دەمەکا شیرین ب شێوازەکا هەرێمی.", "Thai Doodorma": "خوارنێن خوش و دلخواز." };
+    const categoryBadiniDescriptions = { "Hot Coffee": "ڤەخوارنێن گەرم", "Iced Coffee": "قەھوەیا سار و تازە.", "Red Bull": "ئەنەرژیەکا تازە ژ بۆ روژا تە.", "Bris Mojito": "مۆجيتۆ و ڤەخوارنێن سار.", Milkshake: "شیرین و کریمی، ب تامەکێ خۆش.", Smoothie: "فاکێنێن تازە، هاتینە تێکدان.", "Iced Tea": "چا یا سار و تازە.", Juice: "شەربەتێن سروشتی و تازە.", Crepe: "کرێپێن نرم یێن ب دەمێ هاتینە ئامادەکرن.", "Mini Pancake": "پانکەیکێن بچووک، بە تامەکێ مەزن.", Waffle: "وافلێن زێڕین و قرچە، بۆ هاڤالبارنێ.", Kunafa: "دەمەکا شیرین ب شێوازەکا هەرێمی.", "Mini Waffle": "وافلێن بچووک، زێڕین و قرچە.", "Thai Doodorma": "خوارنێن خوش و دلخواز." };
     const defaultCategories = Object.keys(categoryDetails);
     const categoryMigration = item => {
       if (item.category === "Coffee") return "Hot Coffee";
@@ -863,6 +1292,9 @@
       localStorage.setItem("shorash-language", currentLanguage);
       document.documentElement.lang = currentLanguage === "ar" ? "ar" : currentLanguage === "ku" ? "ku" : "en";
       document.documentElement.dir = ["ar", "ku"].includes(currentLanguage) ? "rtl" : "ltr";
+      document.getElementById("welcomeTitle").textContent = currentLanguage === "ar" ? "أهلاً وسهلاً بكم في كافتيريتنا" : currentLanguage === "ku" ? "ب خێر هاتن بۆ کافتریایا مە!" : "Welcome to our Cafeteria!";
+      document.getElementById("welcomeCopy").textContent = currentLanguage === "ar" ? "يسعدنا وجودكم معنا. تصفحوا قائمتنا واكتشفوا مشروبكم أو وجبتكم المفضلة." : currentLanguage === "ku" ? "خۆشحاڵین ب هاتنا وێ. د مینیویا مەدا بگەڕێ و تشتێ خۆشتەڤی بدۆزە." : "We're glad you're here. Explore our menu and find your new favorite.";
+      document.getElementById("welcomeAction").textContent = currentLanguage === "ar" ? "استكشفوا القائمة" : currentLanguage === "ku" ? "مینیو ببینە" : "Explore the menu";
       languageToggle.setAttribute("aria-label", currentLanguage === "ar" ? "اختيار اللغة" : currentLanguage === "ku" ? "زیمان هەڵبژێرە" : "Choose language");
       languageToggle.setAttribute("title", currentLanguage === "ar" ? "اختيار اللغة" : currentLanguage === "ku" ? "زیمان هەڵبژێرە" : "Choose language");
       languageToggle.setAttribute("aria-expanded", "false");
@@ -923,6 +1355,26 @@
       }).finally(() => { pendingMenuWrite = null; });
       await menuWriteQueue;
       menuChannel?.postMessage({ type: "menu-update", ...payload });
+    }
+    async function persistCustomCategoriesSafely() {
+      const customCategories = Object.fromEntries(Object.entries(categoryDetails).filter(([name]) => !defaultCategories.includes(name)));
+      if (!firebaseDatabase) {
+        await persistMenu();
+        return;
+      }
+      if (!firebaseAuth?.currentUser || !isAdminSessionValid()) throw new Error("Sign in with the admin account to save categories online.");
+
+      pendingMenuWrite = { updatingCategories: true };
+      try {
+        await firebaseDatabase.ref("menu").update({ customCategories });
+        try { localStorage.setItem("shorash-menu-categories", JSON.stringify(customCategories)); } catch (error) { console.warn("Local category cache is unavailable.", error); }
+        menuChannel?.postMessage({ type: "menu-update", items: menuItems, customCategories });
+      } catch (error) {
+        if (error?.code === "PERMISSION_DENIED") throw new Error("Firebase denied the category update. Check the signed-in admin account and deployed database rules.");
+        throw new Error(`Could not save categories online: ${error.message || "check your connection and Firebase permissions."}`);
+      } finally {
+        pendingMenuWrite = null;
+      }
     }
     async function appendMenuItemSafely(item) {
       if (!firebaseDatabase) return persistMenu();
@@ -1160,14 +1612,35 @@
     async function menuImageFromFile(file) {
       if (!file) return { image: defaultMenuImage, warning: "" };
       try {
-        if (firebaseStorage) {
-          const uploadedUrl = await uploadMenuImageToStorage(file, `item-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`);
-          if (uploadedUrl) return { image: uploadedUrl, warning: "" };
-        }
         return { image: await dataUrlFromFile(file), warning: "" };
       } catch (error) {
         console.warn("Could not prepare the menu photo for Firebase Database.", error);
         return { image: null, warning: `Photo processing failed: ${error?.message || "choose another image and try again."}` };
+      }
+    }
+
+    async function updateMenuItemPriceSafely(index, price) {
+      const item = menuItems[index];
+      if (!item) throw new Error("The menu item could not be found.");
+      if (!firebaseDatabase) throw new Error("Firebase Database is unavailable; the price was not saved online.");
+      if (!firebaseAuth?.currentUser || !isAdminSessionValid()) throw new Error("Sign in with the admin account to save prices online.");
+
+      let itemKey = menuItemDatabaseKeys[index];
+      if (itemKey === undefined || itemKey === null) {
+        const matchingItems = await firebaseDatabase.ref("menu/items").orderByChild("name").equalTo(item.name).once("value");
+        const matches = Object.entries(matchingItems.val() || {});
+        if (matches.length !== 1) throw new Error(`Could not uniquely match ${item.name} to its online menu item.`);
+        itemKey = matches[0][0];
+      }
+
+      pendingMenuWrite = { updatingItemPrice: item.id };
+      try {
+        await firebaseDatabase.ref(`menu/items/${itemKey}/price`).set(price);
+        try { localStorage.setItem("shorash-menu-items", JSON.stringify(menuItems)); } catch (error) { console.warn("Could not cache the updated menu locally.", error); }
+        const customCategories = Object.fromEntries(Object.entries(categoryDetails).filter(([name]) => !defaultCategories.includes(name)));
+        menuChannel?.postMessage({ type: "menu-update", items: menuItems, customCategories });
+      } finally {
+        pendingMenuWrite = null;
       }
     }
 
@@ -1284,27 +1757,6 @@
       }
     }
 
-    async function uploadNewMenuItemPhoto(itemId, file) {
-      try {
-        let imageUrl = null;
-        if (firebaseStorage) {
-          imageUrl = await uploadMenuImageToStorage(file, itemId);
-        }
-        if (!imageUrl) {
-          const result = await menuImageFromFile(file);
-          if (!result.image) {
-            adminItemError.textContent = result.warning || "Item saved, but its photo could not be processed.";
-            return;
-          }
-          imageUrl = result.image;
-        }
-        await updateMenuItemImageSafely(itemId, imageUrl);
-        adminItemError.textContent = "Item and photo saved to the menu database.";
-      } catch (error) {
-        adminItemError.textContent = `Item saved, but its photo could not be saved: ${error.message || "check Firebase Database permissions and try again."}`;
-      }
-    }
-
     addAdminLanguageFields();
     const adminItemError = document.createElement("div");
     adminItemError.className = "admin-error";
@@ -1319,6 +1771,7 @@
     renderCategories();
     renderMenu();
     modal = new bootstrap.Modal(document.getElementById("itemModal"));
+    const welcomeModal = new bootstrap.Modal(document.getElementById("welcomeModal"));
     setLanguage(currentLanguage);
     const introLanguageButtons = document.querySelectorAll("[data-intro-language]");
     function updateIntroLanguageState() {
@@ -1356,7 +1809,7 @@
         renderMenu(searchInput.value);
         
         try {
-          await persistMenu();
+          await updateMenuItemPriceSafely(index, menuItems[index].price);
           adminCategoryError.textContent = "✓ Price saved successfully!";
           adminCategoryError.style.color = "#79c99a";
           setTimeout(() => {
@@ -1424,8 +1877,49 @@
     languageToggle.addEventListener("click", event => { event.stopPropagation(); const isOpen = languagePicker.classList.toggle("open"); languageToggle.setAttribute("aria-expanded", String(isOpen)); });
     document.querySelectorAll(".language-option").forEach(option => option.addEventListener("click", () => setLanguage(option.dataset.language)));
     document.addEventListener("click", event => { if (!event.target.closest("#languagePicker")) { languagePicker.classList.remove("open"); languageToggle.setAttribute("aria-expanded", "false"); } });
-    document.getElementById("categoryForm").addEventListener("submit", async event => { event.preventDefault(); const input = document.getElementById("adminCategoryName"); const name = input.value.trim(); const nameAr = document.getElementById("adminCategoryNameAr").value.trim(); const nameKu = document.getElementById("adminCategoryNameKu").value.trim(); if (!name) return; if (categoryDetails[name]) { adminCategoryError.textContent = "That category already exists."; return; } categoryDetails[name] = [adminCategoryIcon.value, "Fresh from the cafe.", nameAr, "", nameKu]; adminCategoryError.textContent = ""; input.value = ""; document.getElementById("adminCategoryNameAr").value = ""; document.getElementById("adminCategoryNameKu").value = ""; syncCategories(); try { await persistMenu(); } catch (error) { adminCategoryError.textContent = error.message; } });
-    adminCategoryList.addEventListener("click", async event => { const button = event.target.closest("[data-delete-category]"); if (!button) return; const category = button.dataset.deleteCategory; if (menuItems.some(item => item.category === category)) { adminCategoryError.textContent = "Move or delete its items before removing this category."; return; } delete categoryDetails[category]; adminCategoryError.textContent = ""; syncCategories(); try { await persistMenu(); } catch (error) { adminCategoryError.textContent = error.message; } });
+    document.getElementById("categoryForm").addEventListener("submit", async event => {
+      event.preventDefault();
+      const input = document.getElementById("adminCategoryName");
+      const name = input.value.trim();
+      const nameArInput = document.getElementById("adminCategoryNameAr");
+      const nameKuInput = document.getElementById("adminCategoryNameKu");
+      const nameAr = nameArInput.value.trim();
+      const nameKu = nameKuInput.value.trim();
+      if (!name) return;
+      if (categoryDetails[name]) { adminCategoryError.textContent = "That category already exists."; return; }
+      categoryDetails[name] = [adminCategoryIcon.value, "Fresh from the cafe.", nameAr, "", nameKu];
+      adminCategoryError.textContent = "";
+      syncCategories();
+      try {
+        await persistCustomCategoriesSafely();
+        input.value = "";
+        nameArInput.value = "";
+        nameKuInput.value = "";
+        adminCategoryError.textContent = "Category saved online.";
+      } catch (error) {
+        delete categoryDetails[name];
+        syncCategories();
+        adminCategoryError.textContent = error.message;
+      }
+    });
+    adminCategoryList.addEventListener("click", async event => {
+      const button = event.target.closest("[data-delete-category]");
+      if (!button) return;
+      const category = button.dataset.deleteCategory;
+      if (menuItems.some(item => item.category === category)) { adminCategoryError.textContent = "Move or delete its items before removing this category."; return; }
+      const previousDetails = categoryDetails[category];
+      delete categoryDetails[category];
+      adminCategoryError.textContent = "";
+      syncCategories();
+      try {
+        await persistCustomCategoriesSafely();
+        adminCategoryError.textContent = "Category deleted online.";
+      } catch (error) {
+        categoryDetails[category] = previousDetails;
+        syncCategories();
+        adminCategoryError.textContent = error.message;
+      }
+    });
     document.getElementById("itemForm").addEventListener("submit", async event => {
       event.preventDefault();
       const submitButton = event.target.querySelector("button[type=submit]");
@@ -1451,6 +1945,12 @@
           badge: "FRESH. BOLD",
           image: defaultMenuImage
         };
+        if (imageFile) {
+          adminItemError.textContent = "Preparing photo...";
+          const photo = await menuImageFromFile(imageFile);
+          if (!photo.image) throw new Error(photo.warning || "The item photo could not be processed.");
+          newItem.image = photo.image;
+        }
         menuItems.push(newItem);
         activeCategory = category;
         searchInput.value = "";
@@ -1460,8 +1960,7 @@
         refreshAdminList();
         await appendMenuItemSafely(newItem);
         event.target.reset();
-        adminItemError.textContent = imageFile ? "Item saved. Saving photo to the menu database..." : "Item added to the menu.";
-        if (imageFile) void uploadNewMenuItemPhoto(itemId, imageFile);
+        adminItemError.textContent = imageFile ? "Item and photo added to the online menu." : "Item added to the menu.";
       } catch (error) {
         if (newItem) {
           const itemIndex = menuItems.indexOf(newItem);
@@ -1503,14 +2002,14 @@
               id: chooseSavedValue(localItem.id, firebaseItem.id, firebaseKey),
               name: chooseSavedValue(localItem.name, firebaseItem.name, "Menu item"),
               category: chooseSavedValue(localItem.category, firebaseItem.category, "Uncategorized"),
-              price: chooseSavedValue(localItem.price, firebaseItem.price, ""),
+              price: chooseSavedValue(firebaseItem.price, localItem.price, ""),
               description: chooseSavedValue(localItem.description, firebaseItem.description, ""),
               descriptionAr: chooseSavedValue(localItem.descriptionAr, firebaseItem.descriptionAr, ""),
               descriptionKu: chooseSavedValue(localItem.descriptionKu, firebaseItem.descriptionKu, ""),
               nameAr: chooseSavedValue(localItem.nameAr, firebaseItem.nameAr, ""),
               nameKu: chooseSavedValue(localItem.nameKu, firebaseItem.nameKu, ""),
               badge: chooseSavedValue(localItem.badge, firebaseItem.badge, ""),
-              image: chooseSavedValue(localItem.image, firebaseItem.image, defaultMenuImage) || defaultMenuImage
+              image: chooseSavedValue(firebaseItem.image, localItem.image, defaultMenuImage) || defaultMenuImage
             };
           } else {
             mergedItems.push(firebaseItem);
@@ -1644,8 +2143,219 @@
       document.body.classList.add("menu-opening");
       const loader = document.getElementById("loader");
       loader.classList.add("is-opening");
-      window.setTimeout(() => loader.classList.add("done"), 120);
+      window.setTimeout(() => {
+        loader.classList.add("done");
+        window.setTimeout(() => welcomeModal.show(), 550);
+      }, 120);
     });
+  </script>
+  <script id="menu-3d-layer-js">
+    /* Pointer-driven 3D tilt for menu cards — view only, no data code touched.
+       Uses event delegation so it keeps working after the menu re-renders. */
+    (function () {
+      const menuContent = document.getElementById("menuContent");
+      if (!menuContent) return;
+      const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+      const fineHover = window.matchMedia("(hover: hover) and (pointer: fine)");
+      let activeCard = null;
+      function clearTilt() {
+        if (!activeCard) return;
+        activeCard.classList.remove("is-tilting");
+        activeCard.style.transform = "";
+        activeCard = null;
+      }
+      function applyTilt(card, event) {
+        const rect = card.getBoundingClientRect();
+        if (!rect.width || !rect.height) return;
+        const x = Math.min(Math.max((event.clientX - rect.left) / rect.width, 0), 1);
+        const y = Math.min(Math.max((event.clientY - rect.top) / rect.height, 0), 1);
+        const rotateX = (0.5 - y) * 13;
+        const rotateY = (x - 0.5) * 15;
+        card.style.transform = "perspective(860px) rotateX(" + rotateX.toFixed(2) + "deg) rotateY(" + rotateY.toFixed(2) + "deg) translateY(-10px) scale(1.03)";
+        card.style.setProperty("--gx", (x * 100).toFixed(1) + "%");
+        card.style.setProperty("--gy", (y * 100).toFixed(1) + "%");
+      }
+      menuContent.addEventListener("pointermove", function (event) {
+        if (reducedMotion.matches || !fineHover.matches) return;
+        const card = event.target.closest(".menu-card");
+        if (!card) { clearTilt(); return; }
+        if (card !== activeCard) {
+          clearTilt();
+          activeCard = card;
+          card.classList.add("is-tilting");
+        }
+        applyTilt(card, event);
+      }, { passive: true });
+      menuContent.addEventListener("pointerleave", clearTilt);
+      window.addEventListener("scroll", clearTilt, { passive: true });
+      document.addEventListener("visibilitychange", clearTilt);
+    })();
+    /* Live animated background + scroll-driven header effects — view only. */
+    (function () {
+      const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+      const bg = document.createElement("div");
+      bg.className = "bg-live";
+      bg.setAttribute("aria-hidden", "true");
+      const auroras = ["bg-aurora bg-aurora-a", "bg-aurora bg-aurora-b", "bg-aurora bg-aurora-c"].map(function (cls) {
+        const layer = document.createElement("div");
+        layer.className = cls;
+        bg.appendChild(layer);
+        return layer;
+      });
+      const grid = document.createElement("div");
+      grid.className = "bg-grid";
+      grid.setAttribute("aria-hidden", "true");
+      const glow = document.createElement("div");
+      glow.className = "bg-glow";
+      glow.setAttribute("aria-hidden", "true");
+      document.body.prepend(bg);
+      document.body.prepend(grid);
+      document.body.prepend(glow);
+      if (!reduceMotion.matches) {
+        for (let i = 0; i < 16; i += 1) {
+          const steam = document.createElement("span");
+          steam.className = "bg-steam";
+          steam.style.left = (3 + Math.random() * 94).toFixed(1) + "%";
+          steam.style.setProperty("--s", (60 + Math.random() * 105).toFixed(0) + "px");
+          steam.style.setProperty("--d", (11 + Math.random() * 13).toFixed(1) + "s");
+          steam.style.setProperty("--dl", (-Math.random() * 24).toFixed(1) + "s");
+          bg.appendChild(steam);
+        }
+      }
+      const header = document.querySelector(".site-header");
+      let ticking = false;
+      let lastY = window.scrollY || 0;
+      let fastTimer = null;
+      function refresh() {
+        const y = window.scrollY || window.pageYOffset || 0;
+        if (header) header.classList.toggle("scrolled", y > 40);
+        document.body.classList.toggle("is-scrolled", y > 40);
+        if (!reduceMotion.matches) {
+          if (Math.abs(y - lastY) > 45) {
+            document.body.classList.add("bg-fast");
+            clearTimeout(fastTimer);
+            fastTimer = setTimeout(function () { document.body.classList.remove("bg-fast"); }, 350);
+          }
+          auroras[0].style.transform = "translate(-50%, -70%) translate3d(0, " + (y * .12).toFixed(1) + "px, 0)";
+          auroras[1].style.transform = "translate(-50%, 60%) translate3d(0, " + (-y * .09).toFixed(1) + "px, 0)";
+          auroras[2].style.transform = "translate3d(0, " + ((y * .05) % 80).toFixed(1) + "px, 0)";
+          grid.style.transform = "translate3d(0, " + ((y * .18) % 30).toFixed(1) + "px, 0)";
+          const max = Math.max(document.documentElement.scrollHeight - window.innerHeight, 1);
+          glow.style.top = (38 + Math.min(Math.max(y / max, 0), 1) * 24).toFixed(1) + "%";
+        }
+        lastY = y;
+        ticking = false;
+      }
+      window.addEventListener("scroll", function () {
+        if (ticking) return;
+        ticking = true;
+        requestAnimationFrame(refresh);
+      }, { passive: true });
+      refresh();
+    })();
+    /* 3D cafe photo slider — auto-play, arrows, dots, swipe. View only. */
+    (function () {
+      const slider = document.getElementById("cafeSlider");
+      if (!slider) return;
+      const slides = Array.prototype.slice.call(slider.querySelectorAll(".slide"));
+      const dots = Array.prototype.slice.call(slider.querySelectorAll(".slider-dot"));
+      const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+      const AUTO_MS = 4500;
+      let index = 0;
+      let prev = -1;
+      let timer = null;
+      let outTimer = null;
+      function layout() {
+        slides.forEach(function (slide, i) {
+          slide.style.transform = "";
+          slide.classList.remove("is-active", "is-prev", "is-next", "is-far", "is-out");
+          if (i === index) slide.classList.add("is-active");
+          else if (i === prev) slide.classList.add("is-out");
+          slide.setAttribute("aria-hidden", i === index ? "false" : "true");
+        });
+        clearTimeout(outTimer);
+        outTimer = setTimeout(function () {
+          slides.forEach(function (slide) { slide.classList.remove("is-out"); });
+        }, 700);
+        prev = index;
+        dots.forEach(function (dot, i) {
+          dot.classList.toggle("active", i === index);
+          dot.setAttribute("aria-selected", i === index ? "true" : "false");
+        });
+      }
+      function go(next) {
+        index = ((next % slides.length) + slides.length) % slides.length;
+        layout();
+        restart();
+      }
+      function restart() {
+        clearInterval(timer);
+        if (!reduceMotion.matches) timer = setInterval(function () { go(index + 1); }, AUTO_MS);
+      }
+      slider.querySelector(".slider-prev").addEventListener("click", function () { go(index - 1); });
+      slider.querySelector(".slider-next").addEventListener("click", function () { go(index + 1); });
+      dots.forEach(function (dot, i) { dot.addEventListener("click", function () { go(i); }); });
+      slider.addEventListener("pointerenter", function () { clearInterval(timer); });
+      slider.addEventListener("pointerleave", restart);
+      let dragStartX = null;
+      slider.addEventListener("pointerdown", function (event) { dragStartX = event.clientX; }, { passive: true });
+      slider.addEventListener("pointermove", function (event) {
+        if (dragStartX === null || reduceMotion.matches) return;
+        const dx = event.clientX - dragStartX;
+        if (Math.abs(dx) > 4) slides[index].style.transform = "translateX(" + (dx * .35).toFixed(1) + "px)";
+      }, { passive: true });
+      slider.addEventListener("pointerup", function (event) {
+        if (dragStartX === null) return;
+        const dx = event.clientX - dragStartX;
+        dragStartX = null;
+        slides[index].style.transform = "";
+        if (Math.abs(dx) > 42) go(index + (dx < 0 ? 1 : -1));
+        else if (Math.abs(dx) < 8 && !event.target.closest(".slider-dot")) go(index + 1);
+      }, { passive: true });
+      slider.addEventListener("pointercancel", function () { dragStartX = null; slides[index].style.transform = ""; });
+      document.addEventListener("keydown", function (event) {
+        if (event.key === "ArrowLeft") go(index - 1);
+        if (event.key === "ArrowRight") go(index + 1);
+      });
+      layout();
+      restart();
+    })();
+
+    // ---- BG SCROLL ENGINE v2: progress + velocity driven background ----
+    (function () {
+      if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+      const fx = document.createElement("div");
+      fx.className = "bg-scroll-fx";
+      fx.setAttribute("aria-hidden", "true");
+      fx.innerHTML = '<div class="bg-swirl bg-swirl-a"></div><div class="bg-swirl bg-swirl-b"></div><div class="bg-stars-far"></div><div class="bg-stars"></div><div class="bg-speed"></div>';
+      document.body.appendChild(fx);
+      function makeStars(el, count, color) {
+        const w = Math.max(window.innerWidth, 380), h = Math.max(window.innerHeight, 500) * 1.8;
+        const parts = [];
+        for (let i = 0; i < count; i++) {
+          const x = Math.round(Math.random() * w), y = Math.round(Math.random() * h);
+          parts.push(x + "px " + y + "px 0 " + (Math.random() < .18 ? "1px" : "0") + " " + color);
+        }
+        el.style.boxShadow = parts.join(",");
+      }
+      makeStars(fx.querySelector(".bg-stars"), 70, "rgba(255, 244, 214, .9)");
+      makeStars(fx.querySelector(".bg-stars-far"), 50, "rgba(229, 185, 104, .55)");
+      let vel = 0, lastY = window.scrollY, running = false;
+      function frame() {
+        const y = window.scrollY;
+        const dy = Math.abs(y - lastY);
+        lastY = y;
+        vel = Math.min(1, vel * .86 + dy / 55);
+        const max = Math.max(document.documentElement.scrollHeight - window.innerHeight, 1);
+        document.body.style.setProperty("--sp", (y / max).toFixed(4));
+        document.body.style.setProperty("--sv", vel.toFixed(3));
+        if (vel > .004) { requestAnimationFrame(frame); } else { running = false; document.body.style.setProperty("--sv", "0"); }
+      }
+      function kick() { if (!running) { running = true; requestAnimationFrame(frame); } }
+      window.addEventListener("scroll", kick, { passive: true });
+      window.addEventListener("load", kick);
+      kick();
+    })();
   </script>
 </body>
 </html>
