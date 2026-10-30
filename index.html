@@ -842,6 +842,28 @@
 
     /* 11. Nothing ambient should keep burning GPU while the screen/tab is away. */
     body.ambient-paused *, body.ambient-paused *::before, body.ambient-paused *::after { animation-play-state: paused !important; }
+
+    /* ================= PERF v4 — "OPEN MENU FAST" =================
+       The tap used to hand over ~1.5s of animation before you could read anything:
+       the intro logo lifted out over .55s, the loader faded for .5s, then header,
+       search, bar, list and footer each replayed a .7s rise with up to .32s of
+       stagger. All of it is now one short, tight hand-off (~0.45s) and the pieces
+       land almost together. Motion style unchanged — just quicker. */
+    /* PERF v5: one more tightening pass — the hand-off now lands in ~0.3s. */
+    .loader { transition: opacity .16s ease, visibility .16s ease; }
+    .loader-inner { animation-duration: .5s; }
+    .loader.is-opening .loader-inner { animation-duration: .24s; }
+    body.menu-opening .site-header, body.menu-opening .search-panel, body.menu-opening .category-bar, body.menu-opening main, body.menu-opening .site-footer { animation-duration: .34s; }
+    body.menu-opening .site-header { animation-delay: 0s; }
+    body.menu-opening .search-panel { animation-delay: .03s; }
+    body.menu-opening .category-bar { animation-delay: .05s; }
+    body.menu-opening main { animation-delay: .07s; }
+    body.menu-opening .site-footer { animation-delay: .08s; }
+    .menu-section { animation-duration: .34s; }
+    .reveal, .menu-section .reveal { transition-duration: .42s; }
+    .hero-content { animation-duration: .42s; }
+    .welcome-modal .modal-dialog { transition-duration: .18s; }
+    .welcome-modal.show .welcome-content { animation-duration: .38s; }
   </style>
 </head>
   <body class="intro-active">
@@ -1374,6 +1396,7 @@
     }
 
     function showLoader(onComplete) {
+      window.__shorashBusyUntil = performance.now() + 450;
       const loader = document.getElementById("loader");
       loader.classList.remove("done", "is-opening");
       loader.classList.add("category-transition");
@@ -1385,7 +1408,7 @@
         document.body.classList.remove("intro-active");
         loader.classList.remove("category-transition");
         loader.classList.add("done");
-      }, 300);
+      }, 110); /* PERF v4: was 300ms of dead air on every category tap. */
     }
 
     function syncCategories() {
@@ -2259,12 +2282,17 @@
       }).catch(() => showIntroAudioButton());
     });
     introOpen.addEventListener("click", async () => {
+      window.__shorashBusyUntil = performance.now() + 750;
       introAudio.pause();
       introAudioButton.hidden = true;
       introOpen.disabled = true;
       document.querySelectorAll("[data-intro-language]").forEach(button => { button.disabled = true; });
-      introOpen.textContent = currentLanguage === "ar" ? "جار تحميل القائمة..." : currentLanguage === "ku" ? "مینیو دهێتە بارکرن..." : "Loading menu...";
-      await menuDataReadyPromise;
+      /* PERF v4 — INSTANT OPEN: this used to `await menuDataReadyPromise` BEFORE showing
+         anything, so on a first visit (or a slow connection) the tap just sat on
+         "Loading menu...". The menu is already built behind the intro on every return
+         visit (it is cached in localStorage), so the reveal now happens on the tap itself.
+         If the data has not landed yet, the menu opens straight into its own loading state
+         and fills in the moment Firebase answers — no blocked button, no dead air. */
       activeCategory = "All";
       searchInput.value = "";
       clearSearch.classList.remove("visible");
@@ -2275,10 +2303,13 @@
       document.body.classList.add("menu-opening");
       const loader = document.getElementById("loader");
       loader.classList.add("is-opening");
+      /* PERF v5: the cover used to hold for 60ms before it even started fading, and the
+         welcome card waited another 380ms. The fade now begins on the very next frame
+         (.16s transition) and the card is up at 300ms — tap to readable menu in ~0.2s. */
       window.setTimeout(() => {
         loader.classList.add("done");
-        window.setTimeout(() => welcomeModal.show(), 550);
-      }, 120);
+        window.setTimeout(() => welcomeModal.show(), 300);
+      }, 24);
     });
   </script>
   <script id="menu-3d-layer-js">
@@ -2663,9 +2694,20 @@
         probe.src = src;
       }
       function pump() {
+        /* PERF v4: never let the idle photo work overlap the open/category hand-off. */
+        if (window.__shorashBusyUntil && performance.now() < window.__shorashBusyUntil) { whenIdle(pump); return; }
         var job = queue.shift();
-        if (!job) { running = false; return; }
+        if (!job) { warmFirstScreen(); running = false; return; }
         shrinkOne(job.img, job.maxEdge, function () { whenIdle(pump); });
+      }
+      /* PERF v4: the menu sits hidden behind the intro, so the browser has not decoded the
+         first screen of photos yet — that decode landed exactly on the "Open Menu" tap and
+         made the reveal hitch. Decoding them while the intro is still up costs nothing. */
+      function warmFirstScreen() {
+        var first = document.querySelectorAll("#menuContent .card-image img");
+        for (var i = 0; i < first.length && i < 12; i += 1) {
+          if (typeof first[i].decode === "function") { var p = first[i].decode(); if (p && p.catch) p.catch(function () {}); }
+        }
       }
       function collect() {
         queue = [];
@@ -2680,6 +2722,7 @@
           }
         });
         if (!running && queue.length) { running = true; whenIdle(pump); }
+        else if (!queue.length) warmFirstScreen();
       }
       [document.getElementById("menuContent"), document.getElementById("adminList")].forEach(function (root) {
         if (!root) return;
