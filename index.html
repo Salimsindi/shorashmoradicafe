@@ -337,6 +337,512 @@
     @media (max-width: 767px) { .category-bar { display: none; } .nav-wrap { min-height: 82px; } .brand { gap: .45rem; } .brand-mark { width: 52px; height: 64px; padding: 1px; border-radius: 9px; } .brand-arabic { font-size: 1.08rem; } .brand-latin { font-size: .56rem; letter-spacing: .08em; } .coffee-spark { font-size: .76rem; } .hero { min-height: 485px; } .hero-content { padding: 6rem 0 5rem; } .search-panel { margin-top: 1rem; padding: .65rem .75rem; } .menu-section { padding-top: 3.3rem; } .section-heading { align-items: start; flex-direction: column; gap: .25rem; } .card-image { aspect-ratio: 1.08 / 1; } .card-body { min-height: 128px; padding: .8rem; } .card-body h3 { font-size: .9rem; line-height: 1.15; } .price { font-size: .74rem; } .card-body p { margin-top: .35rem; font-size: .68rem; line-height: 1.3; } .badge-soft { font-size: .52rem; padding: .2rem .35rem; } .footer-brand { font-size: .85rem; letter-spacing: .1em; } .footer-logo { width: 150px; height: 66px; } .footer-cowboy-logo { width: 68px; height: 68px; } .footer-arabic { font-size: 1rem; } .footer-bottom { flex-direction: column; } }
     @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; transition-duration: .01ms !important; } }
   </style>
+  <style id="menu-3d-layer">
+    /* ==================================================================
+       SHORASH 3D MENU LAYER — visual/animation redesign only.
+       Purely additive: touches no menu data, Firebase or rendering logic.
+       ================================================================== */
+
+    /* ---------- Category bar: floating 3D pills ---------- */
+    .category-link { transform-style: preserve-3d; will-change: transform; }
+    .category-link:hover, .category-link:focus-visible { transform: perspective(560px) translateY(-4px) rotateX(18deg) scale(1.05); box-shadow: 0 14px 28px rgba(155, 63, 24, .4), inset 0 1px 0 rgba(255, 255, 255, .1); }
+    .category-link.active { background: linear-gradient(160deg, #b94b1c, #8f3817 55%, #6d2a11); border-color: #ffad67; box-shadow: 0 12px 28px rgba(155, 63, 24, .48), inset 0 1px 0 rgba(255, 255, 255, .18); transform: perspective(560px) translateZ(8px); }
+    .category-link:hover i, .category-link.active i { transform: perspective(420px) translateZ(10px) rotate(-10deg) scale(1.14); }
+
+    /* ---------- Mobile drawer: 3D door opening ---------- */
+    .mobile-menu { perspective: 1600px; background: rgba(3, 12, 20, .6); -webkit-backdrop-filter: blur(7px); backdrop-filter: blur(7px); }
+    .mobile-menu-panel { transform-origin: right center; backface-visibility: hidden; will-change: transform; transform: translateX(100%) rotateY(-55deg); box-shadow: none; transition: transform .62s cubic-bezier(.16, .84, .3, 1), box-shadow .62s ease; }
+    .mobile-menu.open .mobile-menu-panel { transform: translateX(0) rotateY(0); box-shadow: -34px 0 80px rgba(0, 0, 0, .55), -4px 0 0 rgba(229, 185, 104, .35); }
+    .mobile-menu-panel::before { content: ""; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(285deg, rgba(229, 185, 104, .16), transparent 46%); opacity: 0; transition: opacity .6s ease; }
+    .mobile-menu.open .mobile-menu-panel::before { opacity: 1; }
+    .mobile-menu-link { transform-origin: right center; }
+    .mobile-menu.open .mobile-menu-link { animation: menu3dLinkIn .55s cubic-bezier(.2, .8, .2, 1) backwards; }
+    .mobile-menu.open .mobile-menu-link:nth-child(1) { animation-delay: .1s; }
+    .mobile-menu.open .mobile-menu-link:nth-child(2) { animation-delay: .15s; }
+    .mobile-menu.open .mobile-menu-link:nth-child(3) { animation-delay: .2s; }
+    .mobile-menu.open .mobile-menu-link:nth-child(4) { animation-delay: .25s; }
+    .mobile-menu.open .mobile-menu-link:nth-child(5) { animation-delay: .3s; }
+    .mobile-menu.open .mobile-menu-link:nth-child(6) { animation-delay: .35s; }
+    .mobile-menu.open .mobile-menu-link:nth-child(7) { animation-delay: .4s; }
+    .mobile-menu.open .mobile-menu-link:nth-child(8) { animation-delay: .45s; }
+    .mobile-menu.open .mobile-menu-link:nth-child(9) { animation-delay: .5s; }
+    .mobile-menu.open .mobile-menu-link:nth-child(10) { animation-delay: .55s; }
+    .mobile-menu.open .mobile-menu-link:nth-child(11) { animation-delay: .6s; }
+    .mobile-menu.open .mobile-menu-link:nth-child(n + 12) { animation-delay: .65s; }
+    @keyframes menu3dLinkIn { from { opacity: 0; transform: translateX(52px) rotateY(-48deg); } 60% { opacity: 1; } to { opacity: 1; transform: translateX(0) rotateY(0); } }
+    .mobile-menu-link:hover, .mobile-menu-link.active { transform: perspective(700px) translateX(9px) rotateY(-9deg) scale(1.02); }
+    .mobile-menu-link:hover i, .mobile-menu-link.active i { transform: translateZ(8px) rotate(-8deg) scale(1.1); }
+
+    /* ---------- Menu sections: cards fly in with depth ---------- */
+    .menu-section .row { perspective: 1500px; }
+    .menu-section .reveal { transform: translateY(44px) rotateX(-20deg) scale(.92); transform-origin: 50% 100%; transition: opacity .75s cubic-bezier(.2, .8, .2, 1), transform .75s cubic-bezier(.2, .8, .2, 1); }
+    .menu-section .reveal.show { transform: none; }
+
+    /* ---------- Menu cards: pointer-tracked 3D tilt + glare ---------- */
+    .menu-card { border-radius: 26px; will-change: transform; transition: transform .45s cubic-bezier(.2, .8, .2, 1), box-shadow .45s ease; }
+    .menu-card::before { content: ""; position: absolute; inset: auto 0 0 0; z-index: 2; height: 3px; background: linear-gradient(90deg, transparent, var(--gold), #ed8130, transparent); opacity: 0; transition: opacity .35s ease; }
+    .menu-card::after { content: ""; position: absolute; inset: 0; z-index: 3; pointer-events: none; opacity: 0; background: radial-gradient(circle 260px at var(--gx, 50%) var(--gy, 50%), rgba(255, 244, 214, .32), rgba(237, 129, 48, .12) 42%, transparent 68%); transition: opacity .35s ease; }
+    .menu-card:hover::before, .menu-card.is-tilting::before { opacity: .9; }
+    .menu-card.is-tilting::after { opacity: 1; }
+    .menu-card.is-tilting { box-shadow: 0 30px 62px rgba(0, 0, 0, .52), 0 0 0 1px rgba(229, 185, 104, .38), 0 0 38px rgba(229, 185, 104, .16); }
+    .card-image img { transition: filter .5s ease, transform .5s cubic-bezier(.2, .8, .2, 1); }
+    .menu-card.is-tilting .card-image img { transform: scale(1.05) translateY(-3px); filter: saturate(1.18) brightness(1.05); }
+    .card-body h3, .price, .badge-soft { transition: transform .35s cubic-bezier(.2, .8, .2, 1), color .3s ease, filter .3s ease; }
+    .menu-card.is-tilting .card-body h3 { transform: translateY(-2px); }
+    .menu-card.is-tilting .price { transform: translateY(-3px) scale(1.09); color: #ff9b4a; filter: drop-shadow(0 4px 10px rgba(237, 129, 48, .45)); }
+    .menu-card.is-tilting .badge-soft { transform: translateY(-2px) scale(1.04); }
+
+    /* ---------- Section headings: engraved gold look ---------- */
+    .menu-section .section-heading h2 { text-shadow: 0 2px 0 rgba(0, 0, 0, .22), 0 8px 22px rgba(229, 185, 104, .12); }
+
+    @media (prefers-reduced-motion: reduce) { .mobile-menu.open .mobile-menu-link { animation: none; } .menu-card::after, .menu-card.is-tilting .card-image img { opacity: 0; transform: none; } }
+
+    /* ================= LIVE ANIMATED BACKGROUND ================= */
+    .bg-live { position: fixed; inset: 0; z-index: -3; overflow: hidden; pointer-events: none; }
+    .bg-aurora { position: absolute; left: 50%; width: 130vmax; height: 130vmax; max-width: none; border-radius: 50%; filter: blur(90px); will-change: transform; }
+    .bg-aurora-a { top: -45vh; opacity: .14; background: radial-gradient(circle at 42% 40%, rgba(229, 185, 104, .85), transparent 55%), radial-gradient(circle at 64% 62%, rgba(237, 129, 48, .6), transparent 52%); transform: translate(-50%, -70%); }
+    .bg-aurora-b { bottom: -55vh; opacity: .12; background: radial-gradient(circle at 55% 45%, rgba(53, 117, 185, .7), transparent 55%), radial-gradient(circle at 38% 64%, rgba(143, 56, 23, .55), transparent 50%); transform: translate(-50%, 60%); }
+    .bg-steam { position: absolute; bottom: -15vh; width: var(--s, 90px); height: var(--s, 90px); border-radius: 50%; background: radial-gradient(circle, rgba(229, 185, 104, .45), rgba(237, 129, 48, .12) 55%, transparent 70%); filter: blur(16px); opacity: 0; animation: steamRise var(--d, 16s) linear var(--dl, 0s) infinite; will-change: transform, opacity; }
+    @keyframes steamRise { 0% { transform: translate3d(0, 0, 0) scale(.55); opacity: 0; } 14% { opacity: .5; } 70% { opacity: .26; } 100% { transform: translate3d(0, -122vh, 0) scale(1.4); opacity: 0; } }
+
+    /* ================= SCROLL-DRIVEN HEADER / BAR ================= */
+    .site-header { transition: background .35s ease, box-shadow .35s ease; }
+    .site-header.scrolled { background: rgba(6, 17, 30, .97); box-shadow: 0 12px 32px rgba(0, 0, 0, .5), 0 1px 0 rgba(229, 185, 104, .25); }
+    .nav-wrap, .brand-mark, .brand-arabic { transition: min-height .35s cubic-bezier(.2, .8, .2, 1), height .35s cubic-bezier(.2, .8, .2, 1), width .35s cubic-bezier(.2, .8, .2, 1), font-size .35s ease, min-height .35s ease; }
+    .site-header.scrolled .nav-wrap { min-height: 64px; }
+    .site-header.scrolled .brand-mark { width: 46px; height: 56px; }
+    .site-header.scrolled .brand-mark-secondary { width: 62px; height: 48px; }
+    .site-header.scrolled .brand-arabic { font-size: 1.06rem; }
+    .category-bar { transition: background .35s ease, box-shadow .35s ease; }
+    body.is-scrolled .category-bar { background: rgba(6, 17, 30, .97); box-shadow: 0 14px 30px rgba(0, 0, 0, .42); }
+
+    /* ================= SCROLL ANIMATIONS (modern browsers) ================= */
+    @media (prefers-reduced-motion: no-preference) {
+      @supports (animation-timeline: view()) {
+        .menu-section .section-heading h2 { animation: headingDrift linear both; animation-timeline: view(); animation-range: entry 5% cover 32%; }
+        .menu-section .view-label { animation: labelDrift linear both; animation-timeline: view(); animation-range: entry 0% cover 26%; }
+        .menu-section .section-heading p { animation: labelDrift linear both; animation-timeline: view(); animation-range: entry 2% cover 28%; }
+        @keyframes headingDrift { from { opacity: 0; transform: translateY(34px) rotateX(26deg) scale(.96); transform-origin: 50% 100%; } to { opacity: 1; transform: none; } }
+        @keyframes labelDrift { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
+      }
+    }
+
+    /* ================= PREMIUM 3D DRAWER MENU ================= */
+    .mobile-menu-panel { position: relative; background: linear-gradient(168deg, #0d2438 0%, #081a2b 46%, #0e2338 100%); border-left: 1px solid rgba(229, 185, 104, .4); }
+    .mobile-menu-links::after { content: "SHORASH MORADI CAFÉ"; display: block; margin-top: 1.4rem; padding-top: 1rem; border-top: 1px solid rgba(229, 185, 104, .18); text-align: center; color: rgba(229, 185, 104, .5); font-size: .58rem; font-weight: 700; letter-spacing: .34em; }
+    .mobile-menu-head { border-bottom: 1px solid transparent; border-image: linear-gradient(90deg, transparent, rgba(229, 185, 104, .65), transparent) 1; }
+    #mobileMenuTitle { background: linear-gradient(90deg, #e5b968, #fff0cf 45%, #ed8130); -webkit-background-clip: text; background-clip: text; color: transparent; letter-spacing: .32em; font-weight: 800; }
+    .mobile-menu-link { position: relative; overflow: hidden; border: 1px solid rgba(229, 185, 104, .16); background: linear-gradient(140deg, rgba(255, 255, 255, .05), rgba(143, 56, 23, .14)); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .06), 0 4px 14px rgba(0, 0, 0, .18); }
+    .mobile-menu-link i { background: radial-gradient(circle at 32% 28%, #f08a3c, #8f3817 72%); border-color: rgba(255, 173, 103, .55); color: #fff4e8; box-shadow: 0 6px 16px rgba(155, 63, 24, .4), inset 0 1px 0 rgba(255, 255, 255, .25); }
+    .mobile-menu-link::after { content: ""; position: absolute; top: 0; bottom: 0; left: -60%; width: 42%; background: linear-gradient(105deg, transparent, rgba(255, 244, 214, .2), transparent); transform: skewX(-20deg); opacity: 0; pointer-events: none; }
+    .mobile-menu-link:hover::after, .mobile-menu-link.active::after { opacity: 1; animation: drawerSheen .9s ease; }
+    @keyframes drawerSheen { from { left: -60%; } to { left: 125%; } }
+    .mobile-menu-link:hover, .mobile-menu-link.active { color: #fff4e8; background: linear-gradient(140deg, #c2551e, #7d2f12 78%); border-color: #ffad67; box-shadow: 0 16px 34px rgba(155, 63, 24, .5), inset 0 1px 0 rgba(255, 255, 255, .22); }
+    .mobile-menu-link:hover i, .mobile-menu-link.active i { color: #fff4e8; background: radial-gradient(circle at 32% 28%, #ffc185, #c2551e 75%); border-color: #ffad67; }
+
+    /* ================= FLOATING MODERN HEADER — no bar ================= */
+    .site-header, .site-header.scrolled { background: transparent; border-bottom: 0; -webkit-backdrop-filter: none; backdrop-filter: none; box-shadow: none; }
+    .site-header.scrolled .nav-wrap { min-height: 66px; }
+    .brand { gap: .55rem; }
+    .brand-mark { position: relative; width: 66px; height: 66px; padding: 0; border: 2px solid transparent; border-radius: 50%; background: linear-gradient(#0a1c30, #0a1c30) padding-box, conic-gradient(from 210deg, #e5b968, #ed8130, #8f3817, #ffad67, #e5b968) border-box; box-shadow: 0 10px 26px rgba(0, 0, 0, .45), 0 0 20px rgba(229, 185, 104, .22); transition: transform .55s cubic-bezier(.2, .8, .2, 1), box-shadow .45s ease; }
+    .brand-mark img { width: 100%; height: 100%; border-radius: 50%; }
+    .brand-mark-secondary { width: 74px; height: 58px; border-radius: 16px; background: linear-gradient(150deg, rgba(229, 185, 104, .14), rgba(8, 20, 34, .9)) padding-box, linear-gradient(150deg, #e5b968, #8f3817) border-box; }
+    .brand-mark-secondary img { border-radius: 12px; }
+    .brand:hover .brand-mark { transform: rotate(-6deg) scale(1.07); box-shadow: 0 14px 32px rgba(0, 0, 0, .5), 0 0 28px rgba(237, 129, 48, .42); }
+    .brand-arabic { background: linear-gradient(92deg, #f7dfa5, #e5b968 35%, #ed8130 75%, #ffb46b); -webkit-background-clip: text; background-clip: text; color: transparent; text-shadow: none; filter: drop-shadow(0 2px 10px rgba(229, 185, 104, .35)); }
+    .brand-latin { color: rgba(245, 240, 230, .72); letter-spacing: .22em; text-transform: uppercase; font-size: .58rem; }
+    .site-header.scrolled .brand-mark { width: 54px; height: 54px; }
+    .site-header.scrolled .brand-mark-secondary { width: 62px; height: 48px; }
+    .site-header.scrolled .brand-arabic { font-size: 1.06rem; }
+
+    /* ---------- Glass floating action buttons (hamburger + search) ---------- */
+    .nav-actions { gap: .6rem; }
+    .nav-actions .icon-button { width: 47px; height: 47px; border: 1px solid rgba(229, 185, 104, .5); color: #f2d9a4; background: rgba(8, 20, 34, .62); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); box-shadow: 0 10px 24px rgba(0, 0, 0, .4), inset 0 1px 0 rgba(255, 255, 255, .1); }
+    .nav-actions .icon-button:hover, .nav-actions .icon-button:focus-visible { color: #071524; background: linear-gradient(145deg, #ffd98a, #e5b968 45%, #ed8130); border-color: #ffcf87; transform: translateY(-4px) scale(1.08); box-shadow: 0 14px 30px rgba(229, 185, 104, .45), inset 0 1px 0 rgba(255, 255, 255, .4); outline: none; }
+    .nav-actions .icon-button:active { transform: scale(.9); box-shadow: 0 4px 12px rgba(229, 185, 104, .3); }
+    .menu-toggle i { animation: burgerPop .5s cubic-bezier(.18, 1.5, .4, 1); }
+    @keyframes burgerPop { 0% { transform: scale(0) rotate(-150deg); opacity: 0; } 100% { transform: scale(1) rotate(0); opacity: 1; } }
+    .menu-toggle.open { border-color: #ffad67; box-shadow: 0 0 0 5px rgba(237, 129, 48, .16), 0 12px 26px rgba(0, 0, 0, .45); }
+
+    /* ---------- Modern search bar ---------- */
+    .search-box { border-color: rgba(229, 185, 104, .42); background: rgba(8, 20, 34, .6); box-shadow: 0 12px 30px rgba(0, 0, 0, .35), inset 0 1px 0 rgba(255, 255, 255, .07); }
+    .search-box:focus-within { border-color: #ffcf87; background: rgba(10, 26, 44, .8); box-shadow: 0 0 0 4px rgba(229, 185, 104, .14), 0 18px 40px rgba(0, 0, 0, .5); }
+    .search-box i { color: var(--gold); transition: transform .45s cubic-bezier(.2, .8, .2, 1), color .3s ease; }
+    .search-box:focus-within i { transform: scale(1.18) rotate(-14deg); color: #ffcf87; }
+
+    /* ================= LIVE BACKGROUND v2 ================= */
+    .bg-aurora-a { opacity: .2; }
+    .bg-aurora-b { opacity: .17; }
+    .bg-aurora-c { top: 18%; left: 12%; width: 90vmax; height: 90vmax; opacity: .1; background: radial-gradient(circle at 50% 50%, rgba(255, 126, 195, .38), transparent 55%); transform: none; }
+    .bg-grid { position: fixed; inset: -40px 0; z-index: -3; pointer-events: none; background-image: radial-gradient(rgba(229, 185, 104, .14) 1.1px, transparent 1.1px), radial-gradient(rgba(235, 126, 44, .08) .9px, transparent .9px); background-position: 0 0, 14px 16px; background-size: 30px 30px, 46px 46px; opacity: .55; will-change: transform; }
+    .bg-glow { position: fixed; left: 50%; top: 45%; z-index: -3; width: 75vmax; height: 75vmax; border-radius: 50%; pointer-events: none; background: radial-gradient(circle, rgba(237, 129, 48, .17), rgba(229, 185, 104, .07) 45%, transparent 65%); filter: blur(55px); opacity: 0; transform: translate(-50%, -50%) scale(.8); transition: opacity .7s ease, transform .7s ease; }
+    body.is-scrolled .bg-glow { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+    body.bg-fast .bg-glow { opacity: 1; transform: translate(-50%, -50%) scale(1.28); transition: transform .25s ease; }
+    .scroll-progress { background: linear-gradient(90deg, #e5b968, #ed8130 60%, #ff9b4a); box-shadow: 0 0 16px rgba(237, 129, 48, .9), 0 0 4px rgba(255, 207, 135, .9); }
+
+    /* ================= PREMIUM CENTERED HEADER ================= */
+    .site-header, .site-header.scrolled { position: sticky; background: linear-gradient(180deg, rgba(15, 40, 66, .98) 0%, rgba(9, 24, 44, .97) 55%, rgba(6, 17, 31, .98) 100%); border-bottom: 1px solid transparent; border-image: linear-gradient(90deg, transparent, rgba(229, 185, 104, .85), #ffcf87, rgba(229, 185, 104, .85), transparent) 1; box-shadow: 0 14px 38px rgba(0, 0, 0, .42); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); }
+    .site-header::after { content: ""; position: absolute; top: 0; left: 50%; width: min(640px, 82vw); height: 130px; transform: translateX(-50%); background: radial-gradient(ellipse at 50% 0%, rgba(229, 185, 104, .2), transparent 70%); pointer-events: none; }
+    .nav-wrap { position: relative; min-height: 108px; }
+    .site-header.scrolled .nav-wrap { min-height: 76px; }
+    .brand { flex: 1 1 0; min-width: 0; gap: .65rem; }
+    .brand-copy { display: grid; gap: .18rem; }
+    .brand-latin { color: #f2d9a4; font-size: .62rem; font-weight: 700; letter-spacing: .3em; line-height: 1.3; text-transform: uppercase; white-space: nowrap; text-shadow: 0 1px 8px rgba(229, 185, 104, .35); }
+    .brand-mark { width: 62px; height: 62px; }
+    .brand:hover .brand-mark { transform: rotate(-8deg) scale(1.08); }
+
+    /* ---------- Centered hero brand logo ---------- */
+    .brand-center { position: absolute; top: 50%; left: 50%; z-index: 1; display: grid; place-items: center; padding: .35rem 1.1rem; transform: translate(-50%, -50%); }
+    .brand-center::before { content: ""; position: absolute; width: 210px; height: 68px; border-radius: 50%; background: rgba(229, 185, 104, .14); filter: blur(26px); }
+    .brand-main-logo { position: relative; height: 86px; width: auto; display: block; object-fit: contain; filter: brightness(0) saturate(100%) invert(76%) sepia(31%) saturate(750%) hue-rotate(358deg) brightness(95%) contrast(88%) drop-shadow(0 6px 18px rgba(229, 185, 104, .4)); transition: transform .5s cubic-bezier(.2, .8, .2, 1), filter .5s ease; }
+    .brand-center:hover .brand-main-logo { transform: scale(1.07) translateY(-2px); filter: brightness(0) saturate(100%) invert(80%) sepia(38%) saturate(820%) hue-rotate(356deg) brightness(102%) contrast(92%) drop-shadow(0 10px 30px rgba(237, 129, 48, .6)); }
+    .site-header.scrolled .brand-main-logo { height: 60px; }
+
+    /* ---------- Balanced right actions ---------- */
+    .nav-actions { flex: 1 1 0; justify-content: flex-end; }
+    .nav-actions .icon-button { width: 50px; height: 50px; }
+
+    /* ---------- Premium search bar ---------- */
+    .search-panel { margin-top: 1.3rem; }
+    .search-box { max-width: 720px; padding: .95rem 1rem .95rem 1.35rem; border: 1px solid rgba(229, 185, 104, .5); border-radius: 999px; background: linear-gradient(160deg, rgba(17, 42, 68, .88), rgba(8, 20, 34, .78)); box-shadow: 0 16px 38px rgba(0, 0, 0, .4), inset 0 1px 0 rgba(255, 255, 255, .08); }
+    .search-box:focus-within { border-color: #ffcf87; background: linear-gradient(160deg, rgba(22, 52, 84, .92), rgba(10, 26, 44, .84)); box-shadow: 0 0 0 4px rgba(229, 185, 104, .16), 0 22px 46px rgba(0, 0, 0, .55); }
+    .search-box i { font-size: 1.02rem; }
+    .search-box input { font-size: 1.02rem; letter-spacing: .02em; }
+    .search-box input::placeholder { color: rgba(240, 220, 175, .55); }
+
+    /* ---------- Responsive ---------- */
+    @media (max-width: 767px) {
+      .nav-wrap { min-height: 92px; }
+      .site-header.scrolled .nav-wrap { min-height: 68px; }
+      .brand-mark { width: 46px; height: 46px; }
+      .brand-latin { font-size: .5rem; letter-spacing: .18em; }
+      .brand-main-logo { height: 58px; }
+      .brand-center { padding: .3rem .6rem; }
+      .brand-center::before { width: 150px; height: 48px; }
+      .site-header.scrolled .brand-main-logo { height: 44px; }
+      .nav-actions .icon-button { width: 43px; height: 43px; }
+      .search-box { padding: .8rem .85rem .8rem 1.1rem; }
+      .search-box, .search-box input { font-size: .95rem; }
+    }
+    @media (max-width: 420px) {
+      .brand-copy { display: none; }
+      .brand-main-logo { height: 50px; }
+      .brand-mark { width: 40px; height: 40px; }
+    }
+
+    /* ================= ROUND 5 — logo pairing + unified toggle ================= */
+    /* Cowboy profile logo: no circle border, clean image only */
+    .brand-mark { width: 56px; height: 66px; padding: 0; border: 0; border-radius: 0; background: transparent; box-shadow: none; }
+    .brand-mark img { width: 100%; height: 100%; border-radius: 0; object-fit: contain; }
+    .site-header.scrolled .brand-mark { width: 46px; height: 54px; }
+
+    /* Arabic text logo moves right next to the profile logo */
+    .brand { flex: 0 0 auto; gap: .45rem; }
+    .brand-copy { display: none; }
+    .brand-center { position: static; flex: 0 0 auto; transform: none; padding: 0; margin-inline-start: .3rem; }
+    .brand-center::before { display: none; }
+    .brand-main-logo { height: 60px; filter: brightness(0) saturate(100%) invert(76%) sepia(31%) saturate(750%) hue-rotate(358deg) brightness(95%) contrast(88%) drop-shadow(0 3px 12px rgba(229, 185, 104, .35)); }
+    .site-header.scrolled .brand-main-logo { height: 46px; }
+    .brand:hover .brand-main-logo, .brand-center:hover .brand-main-logo { transform: scale(1.06) translateY(-2px); }
+
+    /* Menu open/close button: same colors in both states */
+    .menu-toggle.open, .menu-toggle.open:focus-visible { color: #f2d9a4; border-color: rgba(229, 185, 104, .5); background: rgba(8, 20, 34, .62); box-shadow: 0 10px 24px rgba(0, 0, 0, .4), inset 0 1px 0 rgba(255, 255, 255, .1); }
+    .menu-toggle.open:hover, .menu-toggle.open:focus-visible:hover { color: #071524; background: linear-gradient(145deg, #ffd98a, #e5b968 45%, #ed8130); border-color: #ffcf87; }
+
+    @media (max-width: 767px) {
+      .brand-mark { width: 42px; height: 50px; }
+      .brand-main-logo { height: 46px; }
+      .site-header.scrolled .brand-mark { width: 38px; height: 45px; }
+      .site-header.scrolled .brand-main-logo { height: 40px; }
+    }
+
+    /* ================= 3D CAFE PHOTO SLIDER ================= */
+    .cafe-slider { position: relative; margin-top: 2.2rem; padding: .5rem 0 2.6rem; overflow: hidden; }
+    .slider-stage { position: relative; height: clamp(215px, 33vw, 380px); perspective: 1300px; }
+    .slide { position: absolute; top: 0; left: 19%; width: 62%; height: 100%; margin: 0; transform-style: preserve-3d; transition: transform .95s cubic-bezier(.22, .8, .25, 1), opacity .95s ease, filter .95s ease; }
+    .slide img { width: 100%; height: 100%; display: block; object-fit: cover; border-radius: 20px; border: 1px solid rgba(229, 185, 104, .45); box-shadow: 0 26px 60px rgba(0, 0, 0, .55); }
+    .slide.is-active { transform: translate3d(0, 0, 60px) scale(1); opacity: 1; z-index: 3; }
+    .slide.is-active img { border-color: rgba(255, 207, 135, .8); box-shadow: 0 30px 70px rgba(0, 0, 0, .6), 0 0 42px rgba(229, 185, 104, .22), inset 0 0 0 1px rgba(255, 207, 135, .25); }
+    .slide.is-prev { transform: translate3d(-62%, 0, -160px) rotateY(38deg) scale(.82); opacity: .55; z-index: 2; filter: saturate(.85) brightness(.72); }
+    .slide.is-next { transform: translate3d(62%, 0, -160px) rotateY(-38deg) scale(.82); opacity: .55; z-index: 2; filter: saturate(.85) brightness(.72); }
+    .slide.is-far { transform: translate3d(0, 40px, -320px) scale(.55); opacity: 0; z-index: 1; pointer-events: none; }
+    .slider-caption { position: absolute; left: 50%; bottom: 2.1rem; z-index: 4; transform: translateX(-50%); display: flex; align-items: center; gap: .55rem; padding: .42rem 1.15rem; border: 1px solid rgba(229, 185, 104, .4); border-radius: 999px; color: #f2d9a4; background: rgba(7, 19, 34, .72); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); font-size: .72rem; font-weight: 700; letter-spacing: .14em; white-space: nowrap; box-shadow: 0 10px 26px rgba(0, 0, 0, .45); }
+    .slider-caption-ar { direction: rtl; font-family: "Cairo", sans-serif; font-size: .86rem; color: #ffcf87; }
+    .slider-caption-dot { color: rgba(229, 185, 104, .6); }
+    .slider-nav { position: absolute; top: 42%; z-index: 5; width: 44px; height: 44px; display: grid; place-items: center; border: 1px solid rgba(229, 185, 104, .5); border-radius: 50%; color: #f2d9a4; background: rgba(8, 20, 34, .6); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); box-shadow: 0 10px 24px rgba(0, 0, 0, .4); opacity: 0; transition: opacity .35s ease, transform .35s cubic-bezier(.2, .8, .2, 1), background .3s ease, color .3s ease; }
+    .cafe-slider:hover .slider-nav, .slider-nav:focus-visible { opacity: 1; }
+    .slider-prev { left: clamp(.6rem, 4vw, 2.4rem); }
+    .slider-next { right: clamp(.6rem, 4vw, 2.4rem); }
+    .slider-nav:hover { color: #071524; background: linear-gradient(145deg, #ffd98a, #e5b968 45%, #ed8130); border-color: #ffcf87; transform: scale(1.1); }
+    .slider-nav:active { transform: scale(.92); }
+    .slider-dots { position: absolute; right: 0; bottom: 1.05rem; left: 0; z-index: 4; display: flex; justify-content: center; gap: .5rem; }
+    .slider-dot { width: 9px; height: 9px; padding: 0; border: 1px solid rgba(229, 185, 104, .55); border-radius: 999px; background: rgba(229, 185, 104, .18); cursor: pointer; transition: width .4s cubic-bezier(.2, .8, .2, 1), background .3s ease, box-shadow .3s ease; }
+    .slider-dot:hover { background: rgba(229, 185, 104, .45); }
+    .slider-dot.active { width: 26px; background: linear-gradient(90deg, #e5b968, #ed8130); box-shadow: 0 0 14px rgba(237, 129, 48, .6); }
+    @media (max-width: 767px) {
+      .cafe-slider { margin-top: 1.4rem; padding-bottom: 2.2rem; }
+      .slide { left: 14%; width: 72%; }
+      .slide.is-prev { transform: translate3d(-72%, 0, -140px) rotateY(30deg) scale(.78); }
+      .slide.is-next { transform: translate3d(72%, 0, -140px) rotateY(-30deg) scale(.78); }
+      .slider-nav { opacity: 1; width: 38px; height: 38px; }
+      .slider-caption { font-size: .62rem; padding: .35rem .9rem; bottom: 1.7rem; }
+    }
+
+    /* ================= SLIDER v2 — FLAT LANDSCAPE + POWER ON/OFF ================= */
+    .slider-stage { perspective: none; height: clamp(205px, 31vw, 410px); }
+    .slide { left: 0; width: 100%; height: 100%; transform-style: flat; opacity: 0; visibility: hidden; transform: none; filter: none; transition: none; }
+    .slide.is-active { visibility: visible; z-index: 3; opacity: 1; animation: tvOn .85s cubic-bezier(.2, .8, .2, 1) both; }
+    .slide.is-prev, .slide.is-next, .slide.is-far { opacity: 0; visibility: hidden; transform: none; filter: none; }
+    .slide.is-out { visibility: visible; z-index: 2; animation: tvOff .6s ease-in both; }
+    @keyframes tvOn {
+      0% { opacity: 0; transform: scaleY(.006) scaleX(.65); filter: brightness(0); }
+      30% { opacity: 1; transform: scaleY(.02) scaleX(.9); filter: brightness(2.6); }
+      55% { transform: scaleY(1) scaleX(1); filter: brightness(1.7); }
+      100% { opacity: 1; transform: none; filter: brightness(1); }
+    }
+    @keyframes tvOff {
+      0% { opacity: 1; transform: none; filter: brightness(1); }
+      55% { opacity: 1; transform: scaleY(.012) scaleX(.85); filter: brightness(2.4); }
+      100% { opacity: 0; transform: scaleY(.002) scaleX(.35); filter: brightness(4); }
+    }
+    .slide img { border-radius: 22px; cursor: grab; }
+    .slide img:active { cursor: grabbing; }
+    .slider-nav { opacity: 1; }
+    .cafe-slider:hover .slide.is-active img { transform: scale(1.012); transition: transform .6s cubic-bezier(.2, .8, .2, 1); }
+    @media (prefers-reduced-motion: reduce) { .slide.is-active, .slide.is-out { animation: none; } }
+    @media (max-width: 767px) {
+      .slider-stage { height: clamp(170px, 52vw, 260px); }
+      .slide { left: 0; width: 100%; }
+    }
+
+    /* ================= SLIDER v3 — BORDERLESS DIGITAL, IMAGES ONLY ================= */
+    .cafe-slider { padding-bottom: 1.5rem; }
+    .slide img { border: 0; border-radius: 14px; box-shadow: 0 22px 55px rgba(0, 0, 0, .6); }
+    .slide.is-active img { border: 0; box-shadow: 0 28px 64px rgba(0, 0, 0, .68), 0 0 46px rgba(229, 185, 104, .1); }
+    .slider-caption { display: none; }
+    .slider-dots { bottom: .2rem; }
+    .slider-nav { width: 40px; height: 40px; font-size: .85rem; border-color: rgba(229, 185, 104, .35); background: rgba(6, 16, 29, .5); }
+    .slider-prev { left: clamp(.4rem, 2.5vw, 1.6rem); }
+    .slider-next { right: clamp(.4rem, 2.5vw, 1.6rem); }
+    .slider-stage::after { content: ""; position: absolute; inset: 0; z-index: 4; pointer-events: none; border-radius: 14px; box-shadow: inset 0 -40px 60px -30px rgba(4, 12, 22, .55); }
+
+    /* ================= SLIDER v4 — SOFT FADE, CLICK-TO-NEXT, NO ARROWS ================= */
+    .slide.is-active { animation: slideFadeIn .95s ease both; }
+    .slide.is-out { animation: slideFadeOut .65s ease both; }
+    @keyframes slideFadeIn { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes slideFadeOut { from { opacity: 1; } to { opacity: 0; } }
+    .slider-nav { display: none; }
+    .slide img { cursor: pointer; }
+
+    /* ================= SLIDER v5 — NO SHADOW LINE UNDER PHOTO ================= */
+    .slider-stage::after { display: none; }
+    .slide img, .slide.is-active img { box-shadow: none; }
+
+    /* ================= DRAWER v2 — FULL-SCREEN MENU ON MOBILE ================= */
+    @media (max-width: 767.98px) {
+      .mobile-menu { justify-content: stretch; background: rgba(3, 12, 20, .82); }
+      .mobile-menu-panel { width: 100vw; max-width: 100vw; height: 100vh; height: 100dvh; border-left: 0; border-radius: 0; padding: 1.5rem 1.2rem calc(2.2rem + env(safe-area-inset-bottom)); transform: none; scale: 1.045; opacity: 0; transition: scale .52s cubic-bezier(.16, .84, .3, 1), opacity .38s ease; }
+      .mobile-menu.open .mobile-menu-panel { scale: 1; opacity: 1; box-shadow: none; }
+      .mobile-menu-panel::before { display: none; }
+      .mobile-menu-links { gap: .45rem; margin-top: 1.7rem; }
+      .mobile-menu-link { padding: .82rem .85rem; font-size: 1.06rem; }
+      .mobile-menu-link:hover, .mobile-menu-link.active { transform: none; }
+    }
+
+    /* ================= DRAWER v3 — LANGUAGE + CLOSE MATCH HAMBURGER ================= */
+    .mobile-menu-panel .icon-button { width: 50px; height: 50px; border: 1px solid rgba(229, 185, 104, .5); color: #f2d9a4; background: rgba(8, 20, 34, .62); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); box-shadow: 0 10px 24px rgba(0, 0, 0, .4), inset 0 1px 0 rgba(255, 255, 255, .1); }
+    @media (max-width: 767px) { .mobile-menu-panel .icon-button { width: 43px; height: 43px; } }
+    .mobile-menu-panel .icon-button:hover, .mobile-menu-panel .icon-button:focus-visible { color: #071524; background: linear-gradient(145deg, #ffd98a, #e5b968 45%, #ed8130); border-color: #ffcf87; transform: translateY(-4px) scale(1.08); box-shadow: 0 14px 30px rgba(229, 185, 104, .45), inset 0 1px 0 rgba(255, 255, 255, .4); outline: none; }
+    .mobile-menu-panel .icon-button:active { transform: scale(.9); box-shadow: 0 4px 12px rgba(229, 185, 104, .3); }
+    .mobile-menu-panel .language-picker.open .icon-button { color: #071524; background: linear-gradient(145deg, #ffd98a, #e5b968 45%, #ed8130); border-color: #ffcf87; }
+    .mobile-menu-panel .language-options { border-color: rgba(229, 185, 104, .45); background: rgba(8, 20, 34, .92); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); box-shadow: 0 18px 40px rgba(0, 0, 0, .55), inset 0 1px 0 rgba(255, 255, 255, .08); }
+    .mobile-menu-panel .language-option { color: #f2d9a4; }
+    .mobile-menu-panel .language-option:hover, .mobile-menu-panel .language-option.active { color: #071524; background: linear-gradient(145deg, #ffd98a, #e5b968 55%, #ed8130); }
+
+    /* ================= INTRO v2 — LANGUAGE PILLS MATCH HAMBURGER GLASS/GOLD ================= */
+    .intro-language { color: #f2d9a4; border-color: rgba(229, 185, 104, .5); background: rgba(8, 20, 34, .62); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); box-shadow: 0 10px 24px rgba(0, 0, 0, .4), inset 0 1px 0 rgba(255, 255, 255, .1); }
+    .intro-language:hover, .intro-language:focus-visible { color: #071524; background: linear-gradient(145deg, #ffd98a, #e5b968 45%, #ed8130); border-color: #ffcf87; transform: translateY(-2px); box-shadow: 0 14px 30px rgba(229, 185, 104, .45), inset 0 1px 0 rgba(255, 255, 255, .4); outline: none; }
+    .intro-language.active { color: #071524; background: linear-gradient(145deg, #ffd98a, #e5b968 45%, #ed8130); border-color: #ffcf87; }
+    .intro-language:active { transform: scale(.94); }
+
+    /* ================= DRAWER v4 — GOLD TEXT INSIDE MENU ================= */
+    .mobile-menu-link, .mobile-menu-link span { color: #f2d9a4; }
+    .mobile-menu-link:hover, .mobile-menu-link.active, .mobile-menu-link:hover span, .mobile-menu-link.active span { color: #fff4e8; }
+    .mobile-menu-brand-copy strong { color: #e5b968; }
+    .mobile-menu-brand-copy span, .mobile-menu-head p { color: rgba(229, 185, 104, .65); }
+
+    /* ================= GOLD TEXT v1 — THEME ACCENT BLUE -> GOLD EVERYWHERE ================= */
+    :root { --gold: #e5b968; }
+    .category-link { color: #f2d9a4; }
+    .section-heading p { color: rgba(229, 185, 104, .78); }
+    .view-label { color: #e5b968; }
+    .modal-category { color: #e5b968; }
+
+    /* ================= SLIDER v6 — LIVE GOO LINE UNDER PHOTO ================= */
+    .slider-dots::before { content: ""; position: absolute; top: -.5rem; left: 7%; right: 7%; height: 3px; border-radius: 999px; background: linear-gradient(90deg, transparent, rgba(229, 185, 104, .18) 10%, rgba(255, 217, 138, .55) 50%, rgba(229, 185, 104, .18) 90%, transparent); background-size: 220% 100%; animation: gooTrack 5s linear infinite; }
+    .slider-dots::after { content: ""; position: absolute; top: calc(-.5rem - 1.5px); left: 7%; width: 24%; height: 6px; border-radius: 999px; background: linear-gradient(90deg, transparent, #ffd98a 30%, #ed8130 55%, transparent); filter: blur(1px) drop-shadow(0 0 8px rgba(237, 129, 48, .75)); animation: gooRun 3.4s ease-in-out infinite alternate; will-change: transform; }
+    @keyframes gooTrack { from { background-position: 110% 0; } to { background-position: -110% 0; } }
+    @keyframes gooRun { from { transform: translateX(0) scaleX(1); } 50% { transform: translateX(128%) scaleX(1.3); } to { transform: translateX(255%) scaleX(1); } }
+    @media (prefers-reduced-motion: reduce) { .slider-dots::before, .slider-dots::after { animation: none; } }
+
+    /* ================= GOO LINES v2 — SECTION LINES MATCH THE GOO STYLE ================= */
+    .menu-section::before, .view-label::before { border-radius: 999px; background: linear-gradient(90deg, transparent, rgba(229, 185, 104, .35) 12%, rgba(255, 217, 138, .8) 50%, rgba(229, 185, 104, .35) 88%, transparent); background-size: 220% 100%; box-shadow: 0 0 10px rgba(237, 129, 48, .28); }
+    .menu-section::before { height: 3px; animation: lineReveal .8s both .15s, gooTrack 5s linear infinite 1s; }
+    .view-label::before { width: 34px; height: 3px; animation: gooTrack 3.8s ease-in-out infinite alternate; }
+    @media (prefers-reduced-motion: reduce) { .menu-section::before, .view-label::before { animation: none; } }
+
+    /* ================= GOO LINES v3 — HEADER HAIRLINE GOO ================= */
+    .site-header::before { content: ""; position: absolute; z-index: 1; right: 0; bottom: -1.5px; left: 0; height: 3px; pointer-events: none; background: linear-gradient(90deg, transparent, #ffd98a 40%, #ed8130 60%, transparent) 0 0 / 30% 100% no-repeat, linear-gradient(90deg, transparent, rgba(229, 185, 104, .3) 12%, rgba(255, 217, 138, .6) 50%, rgba(229, 185, 104, .3) 88%, transparent) 0 0 / 220% 100%; filter: drop-shadow(0 0 6px rgba(237, 129, 48, .55)); animation: gooHeader 4.5s ease-in-out infinite alternate; will-change: background-position; }
+    @keyframes gooHeader { from { background-position: 0% 0, 110% 0; } to { background-position: 100% 0, -110% 0; } }
+    @media (prefers-reduced-motion: reduce) { .site-header::before { animation: none; } }
+
+    /* ================= GOO LINES v4 — SEARCH PILL GOO RING (circle, not line) ================= */
+    @property --goo-a { syntax: "<angle>"; inherits: false; initial-value: 0deg; }
+    .search-box { position: relative; }
+    .search-box::after { display: none; }
+    .search-box::before { content: ""; position: absolute; z-index: -1; top: -2.5px; right: -2.5px; bottom: -2.5px; left: -2.5px; padding: 2.5px; border-radius: 999px; background: conic-gradient(from var(--goo-a), rgba(229, 185, 104, .08) 0deg, rgba(229, 185, 104, .08) 285deg, #e5b968 318deg, #ffd98a 338deg, #ed8130 350deg, rgba(229, 185, 104, .08) 360deg); -webkit-mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0); mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0); filter: drop-shadow(0 0 4px rgba(237, 129, 48, .3)); animation: gooRing 5s ease-in-out infinite alternate; will-change: --goo-a; }
+    @keyframes gooRing { to { --goo-a: 360deg; } }
+    @media (prefers-reduced-motion: reduce) { .search-box::before { animation: none; } }
+
+    /* ================= GOO RINGS v2 — HAMBURGER + SEARCH ICON BUTTONS ================= */
+    .nav-actions .icon-button::after { content: ""; position: absolute; inset: 0; z-index: 1; pointer-events: none; border-radius: 50%; padding: 2px; background: conic-gradient(from var(--goo-a), rgba(229, 185, 104, .1) 0deg, rgba(229, 185, 104, .1) 285deg, #e5b968 318deg, #ffd98a 338deg, #ed8130 350deg, rgba(229, 185, 104, .1) 360deg); -webkit-mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0); mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0); animation: gooRing 5s ease-in-out infinite alternate; will-change: --goo-a; }
+    .nav-actions #focusSearch::after { animation-delay: -2.5s; }
+    @media (prefers-reduced-motion: reduce) { .nav-actions .icon-button::after { animation: none; } }
+
+    /* ================= INTRO v3 — GOO RINGS ON INTRO CONTROLS ================= */
+    .intro-language { position: relative; }
+    .intro-language::before { content: ""; position: absolute; inset: -1.5px; z-index: 1; pointer-events: none; border-radius: 999px; padding: 1.5px; background: conic-gradient(from var(--goo-a), rgba(229, 185, 104, .12) 0deg, rgba(229, 185, 104, .12) 285deg, #e5b968 318deg, #ffd98a 338deg, #ed8130 350deg, rgba(229, 185, 104, .12) 360deg); -webkit-mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0); mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0); animation: gooRing 5s ease-in-out infinite alternate; will-change: --goo-a; }
+    .intro-language:nth-child(2)::before { animation-delay: -1.6s; }
+    .intro-language:nth-child(3)::before { animation-delay: -3.2s; }
+    .intro-open::before { content: ""; position: absolute; inset: 0; z-index: 1; pointer-events: none; border-radius: 999px; padding: 2px; background: conic-gradient(from var(--goo-a), rgba(255, 244, 214, .18) 0deg, rgba(255, 244, 214, .18) 285deg, #ffd98a 318deg, #fff0cf 338deg, #ed8130 350deg, rgba(255, 244, 214, .18) 360deg); -webkit-mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0); mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0); animation: gooRing 5s ease-in-out infinite alternate; will-change: --goo-a; }
+    .intro-socials a::after { content: ""; position: absolute; inset: -1.5px; pointer-events: none; border-radius: 50%; padding: 1.5px; background: conic-gradient(from var(--goo-a), transparent 0deg, transparent 278deg, currentColor 318deg, currentColor 352deg, transparent 360deg); -webkit-mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0); mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0); opacity: .95; animation: gooRing 5s ease-in-out infinite alternate; will-change: --goo-a; }
+    .intro-socials a:nth-child(2)::after { animation-delay: -1.6s; }
+    .intro-socials a:nth-child(3)::after { animation-delay: -3.2s; }
+    @media (prefers-reduced-motion: reduce) { .intro-language::before, .intro-open::before, .intro-socials a::after { animation: none; } }
+
+    /* PERF v1 — BG SCROLL ENGINE v3: no per-frame blur re-raster.
+       Blur is baked into pre-blurred radial-gradient blobs on a STATIC layer.
+       Only compositor-cheap transforms + opacity animate per frame. */
+    .bg-scroll-fx { position: fixed; inset: 0; z-index: -2; overflow: hidden; pointer-events: none; }
+    .bg-swirl { position: absolute; left: 50%; top: 50%; width: 85vmax; height: 85vmax; margin: -42.5vmax 0 0 -42.5vmax; will-change: transform, opacity; }
+    .bg-swirl > i { position: absolute; inset: 0; border-radius: 50%; display: block; transform: translate(var(--ox, 0), var(--oy, 0)); will-change: transform; background: radial-gradient(circle at 30% 26%, rgba(229, 185, 104, .30), rgba(229, 185, 104, 0) 46%), radial-gradient(circle at 72% 68%, rgba(237, 129, 48, .26), rgba(237, 129, 48, 0) 44%), radial-gradient(circle at 24% 76%, rgba(53, 117, 185, .16), rgba(53, 117, 185, 0) 40%), radial-gradient(circle at 80% 32%, rgba(143, 56, 23, .16), rgba(143, 56, 23, 0) 38%); }
+    .bg-swirl-b > i { background: radial-gradient(circle at 70% 30%, rgba(53, 117, 185, .26), rgba(53, 117, 185, 0) 45%), radial-gradient(circle at 30% 70%, rgba(229, 185, 104, .22), rgba(229, 185, 104, 0) 42%), radial-gradient(circle at 78% 74%, rgba(143, 56, 23, .18), rgba(143, 56, 23, 0) 40%), radial-gradient(circle at 22% 24%, rgba(237, 129, 48, .14), rgba(237, 129, 48, 0) 36%); }
+    .bg-swirl-a { transform: translate(0, calc(var(--sp, 0) * 58vh)) rotate(calc(var(--sp, 0) * 150deg)); opacity: calc(.42 + var(--sv, 0) * .4); }
+    .bg-swirl-b { transform: translate(0, calc(var(--sp, 0) * -58vh)) rotate(calc(var(--sp, 0) * -150deg)); opacity: calc(.42 + var(--sv, 0) * .4); }
+    .bg-swirl-a > i { --ox: -12%; --oy: -6%; }
+    .bg-swirl-b > i { --ox: 10%; --oy: 8%; }
+    .bg-stars, .bg-stars-far { position: absolute; top: 0; left: 0; width: 2px; height: 2px; border-radius: 50%; will-change: transform, opacity; }
+    .bg-stars-far { transform: translateY(calc(var(--sp, 0) * -130px)); opacity: calc(.3 + var(--sv, 0) * .45); }
+    .bg-stars { transform: translateY(calc(var(--sp, 0) * -280px)); opacity: calc(.5 + var(--sv, 0) * .5); }
+    .bg-speed { position: absolute; inset: 0; background: radial-gradient(ellipse at 50% 50%, transparent 56%, rgba(229, 185, 104, .14) 88%, rgba(237, 129, 48, .1) 100%); opacity: var(--sv, 0); will-change: opacity; }
+
+    /* ================= BACK-TOP v2 — MATCH HAMBURGER GLASS/GOLD ================= */
+    .back-top { border: 1px solid rgba(229, 185, 104, .5); color: #f2d9a4; background: rgba(8, 20, 34, .62); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); box-shadow: 0 10px 24px rgba(0, 0, 0, .4), inset 0 1px 0 rgba(255, 255, 255, .1); }
+    .back-top:hover, .back-top:focus-visible { color: #071524; background: linear-gradient(145deg, #ffd98a, #e5b968 45%, #ed8130); border-color: #ffcf87; box-shadow: 0 14px 30px rgba(229, 185, 104, .45), inset 0 1px 0 rgba(255, 255, 255, .4); transform: translateY(-4px) scale(1.06); outline: none; }
+    .back-top:active { transform: scale(.9); }
+
+    /* ================= PERF v1 — GOO ORBIT: GPU rotation instead of per-frame conic repaint =================
+       The old rings animated a registered custom property (--goo-a), which makes the browser re-paint the
+       conic gradient on the MAIN THREAD every frame (~20ms/frame measured during scroll). A plain
+       transform: rotate() on a circle (or on a disc clipped by a static mask) is composited on the GPU. */
+    @keyframes gooOrbitSpin { to { transform: rotate(360deg); } }
+    .nav-actions .icon-button::after { background: conic-gradient(from 0deg, rgba(229, 185, 104, .1) 0deg, rgba(229, 185, 104, .1) 285deg, #e5b968 318deg, #ffd98a 338deg, #ed8130 350deg, rgba(229, 185, 104, .1) 360deg); animation: gooOrbitSpin 5s ease-in-out infinite alternate; will-change: transform; }
+    .nav-actions #focusSearch::after { animation-delay: -2.5s; }
+    .intro-socials a::after { background: conic-gradient(from 0deg, transparent 0deg, transparent 278deg, currentColor 318deg, currentColor 352deg, transparent 360deg); animation: gooOrbitSpin 5s ease-in-out infinite alternate; will-change: transform; }
+    .intro-socials a:nth-child(2)::after { animation-delay: -1.6s; }
+    .intro-socials a:nth-child(3)::after { animation-delay: -3.2s; }
+    /* Pills: rotating masked discs / clipped interior sweeps re-rasterize on CPU every frame (measured
+       ~20ms each). Rings stay static; the goo motion is a bright capsule riding the rim with translateX
+       only (same technique as .slider-dots::after, which measured as free). */
+    .search-box::before, .intro-language::before, .intro-open::before { animation: none; }
+    .goo-comet { position: absolute; left: 8%; bottom: -2.5px; z-index: 2; width: 22%; height: 5px; border-radius: 999px; pointer-events: none; background: linear-gradient(90deg, transparent, #ffd98a 32%, #ed8130 62%, transparent); filter: blur(.5px) drop-shadow(0 0 6px rgba(237, 129, 48, .5)); transform: translateX(0); will-change: transform; animation: gooComet 4.6s ease-in-out infinite alternate; }
+    @keyframes gooComet { to { transform: translateX(275%); } }
+    .intro-open .goo-comet { bottom: 2px; }
+    /* Header hairline: background-position shimmer + drop-shadow repainted the whole strip every frame.
+       Track goes static; a goo capsule runs along it instead (reuses gooRun). */
+    .site-header::before { animation: none; }
+    .hair-goo { position: absolute; right: 0; bottom: -5px; left: 0; z-index: 2; height: 7px; pointer-events: none; overflow: hidden; }
+    .hair-goo > i { position: absolute; left: 7%; width: 20%; height: 3px; border-radius: 999px; background: linear-gradient(90deg, transparent, #ffd98a 30%, #ed8130 55%, transparent); filter: blur(.5px) drop-shadow(0 0 7px rgba(237, 129, 48, .6)); will-change: transform; animation: gooRun 4.5s ease-in-out infinite alternate; }
+    /* The hidden intro loader kept animating + decoding video behind the menu forever. */
+    .loader.done, .loader.done *, .loader.done *::before, .loader.done *::after { animation-play-state: paused; }
+    @media (prefers-reduced-motion: reduce) { .goo-comet, .hair-goo > i { animation: none; } .nav-actions .icon-button::after, .intro-socials a::after { animation: none; } }
+
+    /* =====================================================================
+       PERF v3 — WHY THE PAGE WAS SLOW + WHY THE PHONE GOT HOT
+       Measured on this page: 116 animations were still running after the intro
+       closed, and most of them made the GPU re-PAINT (not just re-move) every
+       frame:
+         · 3 aurora discs at 130vmax with blur(90px), 16 steam bubbles with
+           blur(16px), one 75vmax glow with blur(55px) moved by style.top
+           (= layout + re-blur) on every scroll frame
+         · 29 gooTrack animations sliding background-position across full-width
+           lines, plus heroSheen sliding a 180% gradient over the whole hero
+         · background-attachment: fixed on the body gradient
+         · backdrop-filter: blur() on the two full-width sticky bars
+         · will-change: transform on all 83 cards (83 GPU layers on a phone)
+       The look is unchanged — every effect is now either static or GPU-only.
+       ===================================================================== */
+
+    /* 1. Body gradient → bottom-most fixed layer. Same colours, no per-frame repaint. */
+    body { background-image: none; background-attachment: scroll; }
+    .bg-live { z-index: -4; background-image: radial-gradient(circle at 12% 8%, rgba(53, 117, 185, .24), transparent 28%), radial-gradient(circle at 88% 72%, rgba(194, 85, 30, .1), transparent 24%), linear-gradient(145deg, #0d2945 0%, #081c31 48%, #061425 100%); }
+
+    /* 2. Aurora + steam: those radial gradients already fade to transparent, so the
+          blur() was invisible work. Without it the layers can be GPU-composited. */
+    .bg-aurora { filter: none; width: 95vmax; height: 95vmax; }
+    .bg-aurora-c { width: 70vmax; height: 70vmax; }
+    .bg-steam { filter: none; }
+    @media (max-width: 767px) { .bg-aurora { width: 68vmax; height: 68vmax; } .bg-aurora-c { width: 52vmax; height: 52vmax; } }
+
+    /* 3. Scroll glow: no blur, and it moves with a transform variable instead of
+          layout (style.top). Registered so the scale-up still eases. */
+    @property --gs { syntax: "<number>"; inherits: false; initial-value: 0.8; }
+    @property --gy { syntax: "<length-percentage>"; inherits: false; initial-value: -12vh; }
+    .bg-glow { filter: none; top: 50%; --gs: .8; transform: translate(-50%, calc(-50% + var(--gy))) scale(var(--gs)); transition: opacity .7s ease, --gs .7s ease; }
+    body.is-scrolled .bg-glow { opacity: 1; --gs: 1; }
+    body.bg-fast .bg-glow { opacity: 1; --gs: 1.28; }
+
+    /* 4. Sticky bars: their background is already ~97% opaque, so the backdrop blur
+          was re-blurring a full-width strip of moving content every frame for nothing. */
+    .site-header, .site-header.scrolled { -webkit-backdrop-filter: none; backdrop-filter: none; }
+    .category-bar { -webkit-backdrop-filter: none; backdrop-filter: none; background: rgba(11, 30, 51, .97); }
+
+    /* 5. Cards: one composited layer per card is what eats a phone's GPU memory.
+          Promote only the card actually being tilted. */
+    .menu-card { will-change: auto; }
+    .menu-card.is-tilting { will-change: transform; }
+
+    /* 6. Goo lines: sliding background-position = full-width repaint every frame.
+          Lines go static — the running capsule / comet already carries the motion. */
+    .menu-section::before { animation: lineReveal .8s both .15s; background-size: 100% 100%; }
+    .view-label::before, .slider-dots::before { animation: none; background-size: 100% 100%; }
+
+    /* 7. Hero sheen: same diagonal gold light, now one GPU slide instead of
+          re-painting a 180% background over the whole hero each frame. */
+    .hero::before { left: -70%; width: 70%; background: linear-gradient(100deg, transparent 18%, rgba(229, 185, 104, .16) 50%, transparent 82%); background-size: auto; will-change: transform; }
+    @keyframes heroSheen { from { transform: translateX(0) skewX(-14deg); opacity: .35; } to { transform: translateX(245%) skewX(-14deg); opacity: .85; } }
+
+    /* 8. Scroll progress: width + box-shadow repaint on every frame → one GPU
+          scaleX of a full-width strip. */
+    .scroll-progress { width: 100%; transform-origin: 0 50%; transform: scaleX(var(--p, 0)); will-change: transform; box-shadow: 0 0 12px rgba(237, 129, 48, .75); transition: none; }
+
+    /* 9. Tried: content-visibility: auto on .menu-section (skips painting off-screen
+          sections). Removed again — measured on the real menu it guessed 693px for
+          sections that are actually 1,300-2,250px tall, so the scrollbar and the
+          category-jump anchors landed in the wrong place. Not worth trading a small
+          paint saving for a menu that scrolls to the wrong section. */
+
+    /* 10. The welcome pop-up's spinning gold ring animates a registered custom property
+           (--welcome-angle), which the browser re-paints on the MAIN THREAD every frame.
+           It was doing that forever, even after you closed the pop-up. Now it only spins
+           while the pop-up is actually on screen. */
+    .welcome-modal .welcome-content::before { animation: none; }
+    .welcome-modal.show .welcome-content::before { animation: welcomeLine 3.5s linear infinite; }
+    .welcome-modal:not(.show) .welcome-logo { animation: none; }
+
+    /* 11. Nothing ambient should keep burning GPU while the screen/tab is away. */
+    body.ambient-paused *, body.ambient-paused *::before, body.ambient-paused *::after { animation-play-state: paused !important; }
+  </style>
 </head>
   <body class="intro-active">
   <div class="scroll-progress" id="scrollProgress" aria-hidden="true"></div>
@@ -345,7 +851,8 @@
   </div>
   <header class="site-header">
     <div class="container nav-wrap">
-      <a class="brand" href="#top" aria-label="Shorash Moradi Cafe home"><span class="brand-mark"><img src="salim_shoras-removebg-preview.png" alt="Shorash Moradi Cafe logo"></span><span class="brand-mark brand-mark-secondary"><img src="Shorash 1.png" alt="Shorash Moradi Arabic logo"></span></a>
+      <a class="brand" href="#top" aria-label="Shorash Moradi Cafe home"><span class="brand-mark"><img src="salim_shoras-removebg-preview.png" alt="Shorash Moradi Cafe logo"></span><span class="brand-copy"><span class="brand-latin">Shorash Moradi Café</span></span></a>
+      <a class="brand-center" href="#top" aria-label="Shorash Moradi Cafe — home"><img class="brand-main-logo" src="Shorash 1.png" alt="Shorash Moradi Arabic logo"></a>
       <div class="nav-actions">
         <button class="icon-button menu-toggle" id="menuToggle" type="button" aria-label="Open menu" aria-expanded="false" title="Open menu"><i class="fa-solid fa-bars" aria-hidden="true"></i></button>
         <button class="icon-button" id="focusSearch" type="button" aria-label="Search menu" title="Search menu"><i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i></button>
@@ -364,6 +871,18 @@
   <div class="container search-panel">
     <form class="search-box" id="searchForm" role="search"><i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i><input id="searchInput" type="search" placeholder="Search the menu..." autocomplete="off" aria-label="Search menu items"><button class="clear-search" id="clearSearch" type="button" aria-label="Clear search"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button></form>
   </div>
+
+  <section class="cafe-slider" id="cafeSlider" aria-label="Shorash Moradi Cafe photos" aria-roledescription="carousel">
+    <div class="slider-stage">
+      <figure class="slide is-active"><img src="cafe-slide-1.jpg" alt="Shorash Moradi Cafe exterior at night" draggable="false"></figure>
+      <figure class="slide is-next"><img src="cafe-slide-2.jpg" alt="Shorash Moradi Cafe corner facade" draggable="false"></figure>
+      <figure class="slide is-prev"><img src="cafe-slide-3.jpg" alt="Shorash Moradi Cafe aerial night view" draggable="false"></figure>
+    </div>
+    <button class="slider-nav slider-prev" type="button" aria-label="Previous photo"><i class="fa-solid fa-chevron-left" aria-hidden="true"></i></button>
+    <button class="slider-nav slider-next" type="button" aria-label="Next photo"><i class="fa-solid fa-chevron-right" aria-hidden="true"></i></button>
+    <div class="slider-caption"><span class="slider-caption-ar">شورەش مۆرادی</span><span class="slider-caption-dot">•</span><span>Shorash Moradi Café</span></div>
+    <div class="slider-dots" role="tablist" aria-label="Choose photo"><button class="slider-dot active" type="button" role="tab" aria-selected="true" aria-label="Photo 1"></button><button class="slider-dot" type="button" role="tab" aria-selected="false" aria-label="Photo 2"></button><button class="slider-dot" type="button" role="tab" aria-selected="false" aria-label="Photo 3"></button></div>
+  </section>
 
   <nav class="category-bar" aria-label="Menu categories"><div class="container"><div class="category-scroll" id="categoryNav"></div></div></nav>
 
@@ -502,7 +1021,7 @@
       "Hot Coffee": "مشروبات دافئة ومحضرة بعناية.", "Iced Coffee": "قهوة باردة ومنعشة.", "Red Bull": "طاقة منعشة ليومك.", "Bris Mojito": "مشروبات منعشة للمشاركة.", Milkshake: "كريمية ولذيذة وباردة.", Smoothie: "فواكه طازجة ممزوجة بنعومة.", "Iced Tea": "شاي بارد ومنعش.", Juice: "عصائر طبيعية ومشرقة.", Crepe: "حلويات مقهى محضرة حسب الطلب.", "Mini Pancake": "لقيمات صغيرة بطعم كبير.", Waffle: "ذهبية ومقرمشة ومناسبة للمشاركة.", Kunafa: "نهاية حلوة بلمسة محلية.", "Thai Doodorma": "أطباق شهية ومريحة.",
     };
     const categoryBadiniNames = { "Hot Coffee": "قەھوەیا گەرم", "Iced Coffee": "قەھوەیا سار", "Red Bull": "ڕێد بوڵ", "Bris Mojito": "بریس مۆجیتۆ", Milkshake: "میلک شەیک", Smoothie: "سمووتی", "Iced Tea": "چا یا سار", Juice: "شەربەت", Crepe: "کرێپ", "Mini Pancake": "پانکەیکی بچووک", Waffle: "وافل", Kunafa: "کونەفە", "Thai Doodorma": "تای دودورما" };
-    const categoryBadiniDescriptions = { "Hot Coffee": "ڤەخوارنێن گەرم و ب بالدارî هاتینە ئامادەکرن.", "Iced Coffee": "قەھوەیا سار و تازە.", "Red Bull": "ئەنەرژیەکا تازە ژ بۆ روژا تە.", Milkshake: "شیرین و کریمی، ب تامەکێ خۆش.", Smoothie: "فاکێنێن تازە، هاتینە تێکدان.", "Iced Tea": "چا یا سار و تازە.", Juice: "شەربەتێن سروشتی و تازە.", Kunafa: "دەمەکا شیرین ب شێوازەکا هەرێمی.", "Thai Doodorma": "خوارنێن خوش و دلخواز." };
+    const categoryBadiniDescriptions = { "Hot Coffee": "ڤەخوارنێن گەرم", "Iced Coffee": "قەھوەیا سار و تازە.", "Red Bull": "ئەنەرژیەکا تازە ژ بۆ روژا تە.", "Bris Mojito": "مۆجيتۆ و ڤەخوارنێن سار.", Milkshake: "شیرین و کریمی، ب تامەکێ خۆش.", Smoothie: "سموۆثییا سار", "Iced Tea": "چا یا سار و تازە.", Juice: "شەربەتێن سروشتی و تازە.", Crepe: "کرێپێن نەرم و شرین", "Mini Pancake": "پانکەیکێن بچووک", Waffle: "وافلێن زێڕین", Kunafa: "خۆشترین کۆنافە", "Mini Waffle": "وافلێن بچووک", "Thai Doodorma": "دوندورما تایڵەندی" };
     const defaultCategories = Object.keys(categoryDetails);
     const categoryMigration = item => {
       if (item.category === "Coffee") return "Hot Coffee";
@@ -1672,20 +2191,44 @@
     mobileMenu.addEventListener("click", event => { if (event.target === mobileMenu) closeMobileMenu(); });
     document.addEventListener("keydown", event => { if (event.key === "Escape") closeMobileMenu(); });
 
-    searchInput.addEventListener("input", event => { clearSearch.classList.toggle("visible", Boolean(event.target.value)); renderMenu(event.target.value); });
+    /* PERF v3: search used to rebuild the whole menu (14 sections, 83 cards, every
+       <img> tag) on EVERY keystroke — that is the "lag while I work in the menu".
+       The clear button still reacts instantly; the rebuild waits for a pause. */
+    let searchRenderTimer = null;
+    searchInput.addEventListener("input", event => {
+      clearSearch.classList.toggle("visible", Boolean(event.target.value));
+      const value = event.target.value;
+      clearTimeout(searchRenderTimer);
+      searchRenderTimer = setTimeout(() => renderMenu(value), 170);
+    });
     document.getElementById("searchForm").addEventListener("submit", event => event.preventDefault());
     clearSearch.addEventListener("click", () => { searchInput.value = ""; clearSearch.classList.remove("visible"); renderMenu(); searchInput.focus(); });
     document.getElementById("focusSearch").addEventListener("click", () => { searchInput.focus(); searchInput.scrollIntoView({ behavior: "smooth", block: "center" }); });
 
     const backTop = document.getElementById("backTop");
     const scrollProgress = document.getElementById("scrollProgress");
+    /* PERF v3: documentElement.scrollHeight is a LAYOUT read — doing it inside the
+       scroll handler meant the browser re-laid-out the page every scroll frame (and
+       that is exactly what content-visibility below makes expensive to ask about).
+       Height is now cached and refreshed only when the page actually resizes. */
+    let cachedScrollable = Math.max(document.documentElement.scrollHeight - window.innerHeight, 1);
+    function refreshScrollable() { cachedScrollable = Math.max(document.documentElement.scrollHeight - window.innerHeight, 1); }
+    if (window.ResizeObserver) new ResizeObserver(refreshScrollable).observe(document.documentElement);
+    else window.addEventListener("resize", refreshScrollable);
     function updateScrollEffects() {
-      const scrollable = document.documentElement.scrollHeight - window.innerHeight;
-      const progress = scrollable > 0 ? (window.scrollY / scrollable) * 100 : 0;
-      scrollProgress.style.width = `${progress}%`;
+      const progress = cachedScrollable > 0 ? (window.scrollY / cachedScrollable) : 0;
+      /* Was style.width = `${progress}%` + a glowing box-shadow — a full-width paint
+         on every scroll frame. Now one GPU scaleX (see PERF v3 rule 8). */
+      scrollProgress.style.setProperty("--p", Math.min(Math.max(progress, 0), 1).toFixed(4));
       backTop.classList.toggle("visible", window.scrollY > 550);
     }
-    window.addEventListener("scroll", updateScrollEffects, { passive: true });
+    let scrollEffectsQueued = false;
+    window.addEventListener("scroll", () => {
+      if (scrollEffectsQueued) return;
+      scrollEffectsQueued = true;
+      requestAnimationFrame(() => { scrollEffectsQueued = false; updateScrollEffects(); });
+    }, { passive: true });
+    window.addEventListener("resize", () => { refreshScrollable(); updateScrollEffects(); }, { passive: true });
     updateScrollEffects();
     backTop.addEventListener("click", () => window.scrollTo({ top: 0, behavior: "smooth" }));
     const introOpen = document.getElementById("introOpen");
@@ -1737,6 +2280,492 @@
         window.setTimeout(() => welcomeModal.show(), 550);
       }, 120);
     });
+  </script>
+  <script id="menu-3d-layer-js">
+    /* Pointer-driven 3D tilt for menu cards — view only, no data code touched.
+       Uses event delegation so it keeps working after the menu re-renders. */
+    (function () {
+      const menuContent = document.getElementById("menuContent");
+      if (!menuContent) return;
+      const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+      const fineHover = window.matchMedia("(hover: hover) and (pointer: fine)");
+      let activeCard = null;
+      function clearTilt() {
+        if (!activeCard) return;
+        activeCard.classList.remove("is-tilting");
+        activeCard.style.transform = "";
+        activeCard = null;
+      }
+      function applyTilt(card, event) {
+        const rect = card.getBoundingClientRect();
+        if (!rect.width || !rect.height) return;
+        const x = Math.min(Math.max((event.clientX - rect.left) / rect.width, 0), 1);
+        const y = Math.min(Math.max((event.clientY - rect.top) / rect.height, 0), 1);
+        const rotateX = (0.5 - y) * 13;
+        const rotateY = (x - 0.5) * 15;
+        card.style.transform = "perspective(860px) rotateX(" + rotateX.toFixed(2) + "deg) rotateY(" + rotateY.toFixed(2) + "deg) translateY(-10px) scale(1.03)";
+        card.style.setProperty("--gx", (x * 100).toFixed(1) + "%");
+        card.style.setProperty("--gy", (y * 100).toFixed(1) + "%");
+      }
+      menuContent.addEventListener("pointermove", function (event) {
+        if (reducedMotion.matches || !fineHover.matches) return;
+        const card = event.target.closest(".menu-card");
+        if (!card) { clearTilt(); return; }
+        if (card !== activeCard) {
+          clearTilt();
+          activeCard = card;
+          card.classList.add("is-tilting");
+        }
+        applyTilt(card, event);
+      }, { passive: true });
+      menuContent.addEventListener("pointerleave", clearTilt);
+      window.addEventListener("scroll", clearTilt, { passive: true });
+      document.addEventListener("visibilitychange", clearTilt);
+    })();
+    /* Live animated background + scroll-driven header effects — view only. */
+    /* PERF v3 helper: one cached page height shared by the background engines.
+       Reading documentElement.scrollHeight per frame forces a layout pass, and on a
+       16,000px menu that is the difference between 60fps and a stuttery, hot phone.
+       View layer only — no data/Firebase code touched. */
+    window.shorashScrollMax = (function () {
+      let value = 1;
+      function measure() { value = Math.max(document.documentElement.scrollHeight - window.innerHeight, 1); return value; }
+      measure();
+      if (window.ResizeObserver) new ResizeObserver(measure).observe(document.documentElement);
+      window.addEventListener("resize", measure, { passive: true });
+      return function () { return value; };
+    })();
+    (function () {
+      const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+      const bg = document.createElement("div");
+      bg.className = "bg-live";
+      bg.setAttribute("aria-hidden", "true");
+      const auroras = ["bg-aurora bg-aurora-a", "bg-aurora bg-aurora-b", "bg-aurora bg-aurora-c"].map(function (cls) {
+        const layer = document.createElement("div");
+        layer.className = cls;
+        bg.appendChild(layer);
+        return layer;
+      });
+      const grid = document.createElement("div");
+      grid.className = "bg-grid";
+      grid.setAttribute("aria-hidden", "true");
+      const glow = document.createElement("div");
+      glow.className = "bg-glow";
+      glow.setAttribute("aria-hidden", "true");
+      document.body.prepend(bg);
+      document.body.prepend(grid);
+      document.body.prepend(glow);
+      if (!reduceMotion.matches) {
+        /* PERF v3: 16 blurred bubbles were fine on a desktop GPU and Cooked a phone.
+           Half as many on small screens — the effect reads the same because they
+           are spread randomly over 24s of staggered rise. */
+        const steamCount = window.innerWidth < 768 ? 8 : 16;
+        for (let i = 0; i < steamCount; i += 1) {
+          const steam = document.createElement("span");
+          steam.className = "bg-steam";
+          steam.style.left = (3 + Math.random() * 94).toFixed(1) + "%";
+          steam.style.setProperty("--s", (60 + Math.random() * 105).toFixed(0) + "px");
+          steam.style.setProperty("--d", (11 + Math.random() * 13).toFixed(1) + "s");
+          steam.style.setProperty("--dl", (-Math.random() * 24).toFixed(1) + "s");
+          bg.appendChild(steam);
+        }
+      }
+      const header = document.querySelector(".site-header");
+      let ticking = false;
+      let lastY = window.scrollY || 0;
+      let fastTimer = null;
+      function refresh() {
+        const y = window.scrollY || window.pageYOffset || 0;
+        if (header) header.classList.toggle("scrolled", y > 40);
+        document.body.classList.toggle("is-scrolled", y > 40);
+        if (!reduceMotion.matches) {
+          if (Math.abs(y - lastY) > 45) {
+            document.body.classList.add("bg-fast");
+            clearTimeout(fastTimer);
+            fastTimer = setTimeout(function () { document.body.classList.remove("bg-fast"); }, 350);
+          }
+          /* PERF v3: the parallax offsets were open-ended (a 16,000px page pushed these
+             layers ~1,900px off screen while they still cost GPU memory). Clamped to a
+             small band — the drift still reads exactly the same near the top. */
+          auroras[0].style.transform = "translate(-50%, -70%) translate3d(0, " + Math.min(y * .12, 110).toFixed(1) + "px, 0)";
+          auroras[1].style.transform = "translate(-50%, 60%) translate3d(0, " + Math.max(-y * .09, -110).toFixed(1) + "px, 0)";
+          auroras[2].style.transform = "translate3d(0, " + ((y * .05) % 60).toFixed(1) + "px, 0)";
+          grid.style.transform = "translate3d(0, " + ((y * .18) % 30).toFixed(1) + "px, 0)";
+          const max = window.shorashScrollMax();
+          /* Was glow.style.top = ... — a layout write on a fixed 75vmax layer every
+             frame. Now a transform variable (PERF v3 rule 3): GPU move, no reflow. */
+          glow.style.setProperty("--gy", (-12 + Math.min(Math.max(y / max, 0), 1) * 24).toFixed(1) + "vh");
+        }
+        lastY = y;
+        ticking = false;
+      }
+      window.addEventListener("scroll", function () {
+        if (ticking) return;
+        ticking = true;
+        requestAnimationFrame(refresh);
+      }, { passive: true });
+      refresh();
+    })();
+    /* 3D cafe photo slider — auto-play, arrows, dots, swipe. View only. */
+    (function () {
+      const slider = document.getElementById("cafeSlider");
+      if (!slider) return;
+      const slides = Array.prototype.slice.call(slider.querySelectorAll(".slide"));
+      const dots = Array.prototype.slice.call(slider.querySelectorAll(".slider-dot"));
+      const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+      const AUTO_MS = 4500;
+      let index = 0;
+      let prev = -1;
+      let timer = null;
+      let outTimer = null;
+      function layout() {
+        slides.forEach(function (slide, i) {
+          slide.style.transform = "";
+          slide.classList.remove("is-active", "is-prev", "is-next", "is-far", "is-out");
+          if (i === index) slide.classList.add("is-active");
+          else if (i === prev) slide.classList.add("is-out");
+          slide.setAttribute("aria-hidden", i === index ? "false" : "true");
+        });
+        clearTimeout(outTimer);
+        outTimer = setTimeout(function () {
+          slides.forEach(function (slide) { slide.classList.remove("is-out"); });
+        }, 700);
+        prev = index;
+        dots.forEach(function (dot, i) {
+          dot.classList.toggle("active", i === index);
+          dot.setAttribute("aria-selected", i === index ? "true" : "false");
+        });
+      }
+      function go(next) {
+        index = ((next % slides.length) + slides.length) % slides.length;
+        layout();
+        restart();
+      }
+      function restart() {
+        clearInterval(timer);
+        if (!reduceMotion.matches) timer = setInterval(function () { go(index + 1); }, AUTO_MS);
+      }
+      slider.querySelector(".slider-prev").addEventListener("click", function () { go(index - 1); });
+      slider.querySelector(".slider-next").addEventListener("click", function () { go(index + 1); });
+      dots.forEach(function (dot, i) { dot.addEventListener("click", function () { go(i); }); });
+      slider.addEventListener("pointerenter", function () { clearInterval(timer); });
+      slider.addEventListener("pointerleave", restart);
+      let dragStartX = null;
+      slider.addEventListener("pointerdown", function (event) { dragStartX = event.clientX; }, { passive: true });
+      slider.addEventListener("pointermove", function (event) {
+        if (dragStartX === null || reduceMotion.matches) return;
+        const dx = event.clientX - dragStartX;
+        if (Math.abs(dx) > 4) slides[index].style.transform = "translateX(" + (dx * .35).toFixed(1) + "px)";
+      }, { passive: true });
+      slider.addEventListener("pointerup", function (event) {
+        if (dragStartX === null) return;
+        const dx = event.clientX - dragStartX;
+        dragStartX = null;
+        slides[index].style.transform = "";
+        if (Math.abs(dx) > 42) go(index + (dx < 0 ? 1 : -1));
+        else if (Math.abs(dx) < 8 && !event.target.closest(".slider-dot")) go(index + 1);
+      }, { passive: true });
+      slider.addEventListener("pointercancel", function () { dragStartX = null; slides[index].style.transform = ""; });
+      document.addEventListener("keydown", function (event) {
+        if (event.key === "ArrowLeft") go(index - 1);
+        if (event.key === "ArrowRight") go(index + 1);
+      });
+      layout();
+      restart();
+    })();
+
+    // ---- BG SCROLL ENGINE v3: progress + velocity driven background (perf-safe) ----
+    (function () {
+      if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+      const fx = document.createElement("div");
+      fx.className = "bg-scroll-fx";
+      fx.setAttribute("aria-hidden", "true");
+      fx.innerHTML = '<div class="bg-stars-far"></div><div class="bg-stars"></div><div class="bg-speed"></div>';
+      document.body.appendChild(fx);
+      function makeStars(el, count, color) {
+        const w = Math.max(window.innerWidth, 380), h = Math.max(window.innerHeight, 500) * 1.8;
+        const parts = [];
+        for (let i = 0; i < count; i++) {
+          const x = Math.round(Math.random() * w), y = Math.round(Math.random() * h);
+          parts.push(x + "px " + y + "px 0 " + (Math.random() < .18 ? "1px" : "0") + " " + color);
+        }
+        el.style.boxShadow = parts.join(",");
+      }
+      makeStars(fx.querySelector(".bg-stars"), 70, "rgba(255, 244, 214, .9)");
+      makeStars(fx.querySelector(".bg-stars-far"), 50, "rgba(229, 185, 104, .55)");
+      /* PERF: --sp/--sv are set on fx (a 5-child subtree), NOT on body. Setting them
+         on body re-ran style for the entire menu DOM every animation frame. */
+      let vel = 0, lastY = window.scrollY, running = false, lastSp = -1, lastSv = -1;
+      function frame() {
+        const y = window.scrollY;
+        const dy = Math.abs(y - lastY);
+        lastY = y;
+        vel = Math.min(1, vel * .86 + dy / 55);
+        const max = window.shorashScrollMax();
+        const sp = +(y / max).toFixed(3);
+        const sv = vel > .004 ? +vel.toFixed(2) : 0;
+        if (sp !== lastSp) { fx.style.setProperty("--sp", sp); lastSp = sp; }
+        if (sv !== lastSv) { fx.style.setProperty("--sv", sv); lastSv = sv; }
+        if (vel > .004) { requestAnimationFrame(frame); } else { running = false; }
+      }
+      function kick() { if (!running) { running = true; requestAnimationFrame(frame); } }
+      window.addEventListener("scroll", kick, { passive: true });
+      window.addEventListener("load", kick);
+      kick();
+    })();
+
+    // ---- PERF v3: stop all ambient motion while the page is not on screen ----
+    /* Phones keep the tab alive for a while after the screen locks or another app
+       opens; the ambient loops were still costing GPU in that window. */
+    (function () {
+      function syncAmbient() {
+        document.body.classList.toggle("ambient-paused", document.hidden);
+      }
+      document.addEventListener("visibilitychange", syncAmbient);
+      window.addEventListener("pageshow", syncAmbient);
+      window.addEventListener("pagehide", syncAmbient);
+      syncAmbient();
+    })();
+
+    // ---- PERF v2: re-render guard (the "auto reload while scrolling" fix) ----
+    /* Firebase's live "value" listener re-fires whenever the connection reconnects (mobile data, screen
+       timeout). That rebuilt the whole menu: scroll jumped, cards faded from zero, images reloaded —
+       it looked like the page reloaded itself. This wrapper (view layer only) keeps the scroll position
+       and the already-seen cards visible when the rebuild produced identical content. */
+    (function () {
+      if (typeof window.renderMenu !== "function") return;
+      var origRender = window.renderMenu;
+      var lastSig = null;
+      var lastShape = null;
+      /* PERF v3b: the old guard did JSON.stringify(menuItems) — with 83 photos stored as
+         base64 inside the database records that copied ~23MB of text on EVERY category
+         tap and search keystroke (hundreds of ms of main-thread work + garbage to clean).
+         Now the identity is built from the short fields only; a photo is identified by its
+         length + head + tail, which is just as unique and costs nothing. */
+      function idOf(value) {
+        var s = String(value == null ? "" : value);
+        return s.length + ":" + s.slice(0, 12) + ":" + s.slice(-12);
+      }
+      function sigOf() {
+        try {
+          if (typeof menuItems === "undefined" || !menuItems || typeof menuItems.length !== "number") return null;
+          var parts = [];
+          for (var i = 0; i < menuItems.length; i += 1) {
+            var it = menuItems[i] || {};
+            parts.push([it.name, it.nameAr, it.nameKu, it.category, it.price, it.badge,
+              idOf(it.description), idOf(it.descriptionAr), idOf(it.descriptionKu), idOf(it.image)].join("\u0003"));
+          }
+          var cat = typeof activeCategory !== "undefined" ? activeCategory : "";
+          var lang = typeof currentLanguage !== "undefined" ? currentLanguage : "";
+          return cat + "\u0000" + lang + "\u0000" + parts.join("\u0002");
+        } catch (error) { return null; }
+      }
+      /* Cheap "did the DOM actually change" check — replaces serialising 23MB of innerHTML. */
+      function shapeOf(menu) {
+        var cards = menu.querySelectorAll(".menu-card");
+        if (!cards.length) return null;
+        var first = cards[0].dataset.item || "";
+        var last = cards[cards.length - 1].dataset.item || "";
+        return cards.length + "|" + menu.querySelectorAll(".menu-section").length + "|" + first + "|" + last;
+      }
+      window.renderMenu = function () {
+        var query = arguments.length && arguments[0] != null ? String(arguments[0]) : "";
+        var base = sigOf();
+        var sig = base === null ? null : query + "\u0001" + base;
+        if (sig !== null && sig === lastSig) return undefined; /* nothing changed — skip rebuild */
+        var menu = document.getElementById("menuContent");
+        var y = window.scrollY || 0;
+        var seen = [];
+        if (menu && lastShape !== null) menu.querySelectorAll(".reveal.show").forEach(function (el) { seen.push(el); });
+        var result = origRender.apply(this, arguments);
+        lastSig = sig;
+        if (menu) {
+          var now = shapeOf(menu);
+          if (now !== null && lastShape !== null && now === lastShape && y > 60) {
+            window.scrollTo(0, y);
+            menu.querySelectorAll(".menu-section").forEach(function (s) { s.style.animation = "none"; });
+            var keys = new Set();
+            seen.forEach(function (el) { keys.add(el.getAttribute("data-item")); });
+            menu.querySelectorAll(".reveal").forEach(function (el) {
+              var card = el.querySelector(".menu-card");
+              if (card && keys.has(card.dataset.item)) el.classList.add("show");
+            });
+          }
+          lastShape = now;
+        }
+        return result;
+      };
+      /* Reveal-on-scroll used to UN-hide cards when they left the viewport, so scrolling back up
+         replayed every fly-in. Once seen = stays seen. */
+      if (typeof window.observeReveals === "function") {
+        window.observeReveals = function () {
+          var observer = new IntersectionObserver(function (entries) {
+            entries.forEach(function (entry) { if (entry.isIntersecting) entry.target.classList.add("show"); });
+          }, { threshold: .12, rootMargin: "-8% 0px -12% 0px" });
+          document.querySelectorAll(".reveal:not(.show)").forEach(function (el) { observer.observe(el); });
+        };
+      }
+    })();
+
+    // ---- PERF v3b: shrink the base64 card photos inside the DOM (view layer only) ----
+    /* All 83 menu photos are stored as base64 text inside the database records, so every card
+       ships a ~1200x1176 picture into a ~250-420px slot: ~23MB of markup and ~470MB of decoded
+       bitmaps for the GPU to chew on. That is the single biggest reason a phone heats up here —
+       and the admin list was worse: its 52px thumbnails each carried a full 276KB photo, and the
+       whole 23MB list was rebuilt on every keystroke in "Search items...".
+       This redraws each photo once, in the browser, at the size it is really shown, and swaps it in
+       for display only — the stored menu data is never modified, and saving a photo keeps the original. */
+    (function () {
+      var QUALITY = 0.72, MIN_CHARS = 60000;
+      var TARGETS = [
+        { selector: "#menuContent .card-image img", maxEdge: 640 },
+        { selector: "#adminList img", maxEdge: 128 }
+      ];
+      var cache = new Map();
+      var queue = [];
+      var running = false;
+      var debounce = null;
+      function keyOf(src, maxEdge) { return maxEdge + "|" + src.length + ":" + src.slice(0, 24) + ":" + src.slice(-24); }
+      function whenIdle(fn) {
+        if (window.requestIdleCallback) requestIdleCallback(fn, { timeout: 800 });
+        else setTimeout(fn, 60);
+      }
+      function shrinkOne(img, maxEdge, done) {
+        var src = img.getAttribute("src") || "";
+        if (src.slice(0, 5) !== "data:" || src.length < MIN_CHARS) { done(); return; }
+        var key = keyOf(src, maxEdge);
+        var hit = cache.get(key);
+        if (hit) { img.setAttribute("src", hit); done(); return; }
+        var probe = new Image();
+        probe.onload = function () {
+          try {
+            var w = probe.naturalWidth || probe.width, h = probe.naturalHeight || probe.height;
+            if (!w || !h) { done(); return; }
+            var scale = Math.min(1, maxEdge / Math.max(w, h));
+            var cw = Math.max(1, Math.round(w * scale)), ch = Math.max(1, Math.round(h * scale));
+            var canvas = document.createElement("canvas");
+            canvas.width = cw; canvas.height = ch;
+            var ctx = canvas.getContext("2d", { willReadFrequently: true });
+            ctx.drawImage(probe, 0, 0, cw, ch);
+            /* Only keep PNG when the photo really has transparency; JPEG is 5-8x smaller. */
+            var hasAlpha = false, data = ctx.getImageData(0, 0, cw, ch).data;
+            for (var i = 3; i < data.length; i += 148) { if (data[i] < 250) { hasAlpha = true; break; } }
+            var small = hasAlpha ? canvas.toDataURL("image/png") : canvas.toDataURL("image/jpeg", QUALITY);
+            if (small && small.length < src.length * .8) {
+              cache.set(key, small);
+              img.setAttribute("src", small);
+            }
+          } catch (error) { /* decode/canvas problem — leave the original photo alone */ }
+          done();
+        };
+        probe.onerror = function () { done(); };
+        probe.decoding = "async";
+        probe.src = src;
+      }
+      function pump() {
+        var job = queue.shift();
+        if (!job) { running = false; return; }
+        shrinkOne(job.img, job.maxEdge, function () { whenIdle(pump); });
+      }
+      function collect() {
+        queue = [];
+        TARGETS.forEach(function (target) {
+          var imgs = document.querySelectorAll(target.selector);
+          for (var i = 0; i < imgs.length; i += 1) {
+            var src = imgs[i].getAttribute("src") || "";
+            if (src.slice(0, 5) !== "data:" || src.length < MIN_CHARS) continue;
+            var key = keyOf(src, target.maxEdge);
+            if (cache.has(key)) imgs[i].setAttribute("src", cache.get(key));
+            else queue.push({ img: imgs[i], maxEdge: target.maxEdge });
+          }
+        });
+        if (!running && queue.length) { running = true; whenIdle(pump); }
+      }
+      [document.getElementById("menuContent"), document.getElementById("adminList")].forEach(function (root) {
+        if (!root) return;
+        new MutationObserver(function () {
+          clearTimeout(debounce);
+          debounce = setTimeout(collect, 450);
+        }).observe(root, { childList: true, subtree: true });
+      });
+      collect();
+    })();
+
+    // ---- PERF v3b: the admin "Search items..." box ----
+    /* Typing there called refreshAdminList() on EVERY keystroke, and each call re-wrote the whole
+       item list (~23MB of base64 photos in markup) — that is the freeze you feel while working.
+       Only search-triggered refreshes wait for a pause; every other call (save price, save photo,
+       add, delete, login) still rebuilds the list immediately, exactly as before. */
+    (function () {
+      if (typeof window.refreshAdminList !== "function") return;
+      var orig = window.refreshAdminList;
+      var timer = null;
+      var fromSearch = false;
+      document.addEventListener("input", function (event) {
+        var el = event.target;
+        if (el && el.classList && el.classList.contains("admin-list-search")) fromSearch = true;
+      }, true);
+      window.refreshAdminList = function (query) {
+        if (!fromSearch) return orig.apply(this, arguments);
+        fromSearch = false;
+        clearTimeout(timer);
+        timer = setTimeout(function () { orig(query); }, 220);
+        return undefined;
+      };
+    })();
+
+    // ---- PERF v1: goo comets on pills + pause hidden loader video ----
+    (function () {
+      var reduce = window.matchMedia("(prefers-reduced-motion: reduce)");
+      function makeComet(el, delay) {
+        var c = document.createElement("span");
+        c.className = "goo-comet";
+        c.setAttribute("aria-hidden", "true");
+        if (delay && delay !== "0s") c.style.animationDelay = delay;
+        el.appendChild(c);
+      }
+      function attachComet(el, delay) {
+        if (!el || el.dataset.gooComet) return;
+        el.dataset.gooComet = "1";
+        makeComet(el, delay);
+        /* The intro button's textContent gets reassigned by the language code, which wipes the comet.
+           Watch and put it back — view-layer only, no data code touched. */
+        new MutationObserver(function () {
+          if (!el.querySelector(".goo-comet")) makeComet(el, delay);
+        }).observe(el, { childList: true });
+      }
+      function build() {
+        if (reduce.matches) return;
+        document.querySelectorAll(".search-box").forEach(function (el) { attachComet(el, "0s"); });
+        document.querySelectorAll(".intro-language").forEach(function (el, n) { attachComet(el, (-1.5 * n) + "s"); });
+        document.querySelectorAll(".intro-open").forEach(function (el) { attachComet(el, "-0.8s"); });
+        var header = document.querySelector(".site-header");
+        if (header && !header.dataset.hairGoo) {
+          header.dataset.hairGoo = "1";
+          var hair = document.createElement("span");
+          hair.className = "hair-goo";
+          hair.setAttribute("aria-hidden", "true");
+          hair.appendChild(document.createElement("i"));
+          header.appendChild(hair);
+        }
+      }
+      build();
+      window.addEventListener("load", build);
+      var loader = document.getElementById("loader");
+      var vid = loader ? loader.querySelector(".loader-video") : null;
+      if (loader && vid) {
+        function sync() {
+          if (loader.classList.contains("done")) { vid.pause(); }
+          /* PERF v3: the category-change flash reuses this loader, so every pill tap was
+             starting the 1.4MB background video decoding again on a phone. It now only
+             plays for the real intro; category flashes hold the last frame (looks the same
+             for the ~0.6s the flash is on screen). */
+          else if (vid.paused && !loader.classList.contains("category-transition")) { var p = vid.play(); if (p && p.catch) p.catch(function () {}); }
+        }
+        new MutationObserver(sync).observe(loader, { attributes: true, attributeFilter: ["class"] });
+        sync();
+      }
+    })();
   </script>
 </body>
 </html>
